@@ -1,10 +1,10 @@
 # Configs Directory (Planned)
 
-This directory is reserved for YAML-based runtime configs introduced in PR-2.
+This directory contains YAML runtime configs introduced in PR-2.
 
 Current state:
-- Runtime still uses `tradingagents/default_config.py` (`DEFAULT_CONFIG`).
-- No YAML loader is active in PR-1.
+- Runtime baseline remains `tradingagents/default_config.py` (`DEFAULT_CONFIG`).
+- YAML overrides are loaded by `tradingagents/config_loader.py`.
 
 Planned naming conventions:
 - `local_4090.yaml`: local development and 24GB VRAM profile.
@@ -13,3 +13,14 @@ Planned naming conventions:
 Guidelines:
 - Keep keys aligned with the documented config contract in `docs/SSOT.md`.
 - Add migration notes when introducing new keys or defaults.
+
+CLI usage:
+```bash
+python -m cli.main analyze --config configs/local_4090.yaml
+python -m cli.main analyze --config configs/local_4090.yaml --print-effective-config
+```
+
+Root `main.py` usage:
+- Set `TRADINGAGENTS_CONFIG=/path/to/config.yaml` to override defaults.
+- If not set, `configs/local_4090.yaml` is used when present.
+- If neither is available, the legacy hardcoded example config is used.

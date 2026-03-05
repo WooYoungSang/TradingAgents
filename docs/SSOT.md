@@ -50,6 +50,11 @@ Current baseline follows upstream structure:
 - `data_vendors`
 - `tool_vendors`
 
+Standard for this fork (as of PR-2):
+- YAML config is the preferred user-facing format.
+- Runtime still preserves backwards compatibility by merging YAML overrides onto `DEFAULT_CONFIG`.
+- Existing code paths using `DEFAULT_CONFIG.copy()` remain valid.
+
 `data_vendors` category keys:
 - `core_stock_apis`
 - `technical_indicators`
