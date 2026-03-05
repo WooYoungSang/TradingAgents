@@ -21,7 +21,6 @@ links:
   ref:
     - "tradingagents/contracts/trade_plan.py"
     - "tradingagents/output/trade_plan_builder.py"
-    - "docs/ADR/ADR-0003-structured-output-tradeplan-v1.md"
   deprecates: []
 
 spec:
@@ -30,7 +29,8 @@ spec:
 
   decision: |
     Emit TradePlan.v1 on every successful run while keeping legacy decision string output.
-    Use strict JSON generation with bounded repair retries and safe HOLD fallback.
+    Use strict JSON generation with bounded repair retries.
+    If retries are exhausted, surface explicit parse failure (TRADEPLAN_PARSE_FAILED).
 
   alternatives:
     - id: "ALT-001"
@@ -46,7 +46,7 @@ spec:
       - "Additional model call per run"
     risks:
       - risk: "JSON formatting failures"
-        mitigation: "Validation + repair loop + deterministic fallback"
+        mitigation: "Validation + repair loop + explicit error surface"
 
 implementation:
   files:

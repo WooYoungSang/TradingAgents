@@ -143,13 +143,16 @@ def run_experiment(args: argparse.Namespace) -> None:
                     failures += 1
                     runtime_sec = time.perf_counter() - run_started
                     runtimes.append(runtime_sec)
+                    is_parse_error = "TRADEPLAN_PARSE_FAILED" in str(exc)
+                    if is_parse_error:
+                        parse_errors += 1
                     run_record.update(
                         {
                             "status": "failed",
                             "runtime_sec": runtime_sec,
                             "decision": None,
                             "trade_plan": None,
-                            "parse_error": False,
+                            "parse_error": is_parse_error,
                             "log_ref": f"eval_results/{symbol}/TradingAgentsStrategy_logs/full_states_log_{run_date}.json",
                             "error": str(exc),
                         }
@@ -179,7 +182,7 @@ def run_experiment(args: argparse.Namespace) -> None:
         "total_runtime_sec": total_runtime,
         "average_runtime_sec": average_runtime,
         "parse_error_count": parse_errors,
-        "parse_error_rate": (parse_errors / success_runs) if success_runs else 0.0,
+        "parse_error_rate": (parse_errors / total_runs) if total_runs else 0.0,
         "action_distribution": action_distribution,
         "symbols": symbols,
         "dates": dates,

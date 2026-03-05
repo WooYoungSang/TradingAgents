@@ -32,7 +32,7 @@ links:
 
 spec:
   summary: |
-    Every propagate run emits both legacy decision string and validated TradePlan.v1 JSON.
+    Every successful propagate run emits both legacy decision string and validated TradePlan.v1 JSON.
 
   contract:
     operation_id: "emit_tradeplan_v1"
@@ -66,23 +66,29 @@ spec:
 
     errors:
       - code: "TRADEPLAN_PARSE_FAILED"
-        http_status: 422
+        http_status: 500
 
     timeout: "10s"
     otel_span: "tool.emit_tradeplan_v1"
 
   acceptance:
     - id: "AC-001"
-      statement: "final_state contains trade_plan and return value still includes decision string."
+      statement: "On successful runs, final_state contains trade_plan and return value still includes decision string."
       test:
         file: "tradingagents/graph/trading_graph.py"
         function: "propagate"
         command: "python -m compileall ."
     - id: "AC-002"
-      statement: "trade_plan is included in full state log output."
+      statement: "On successful runs, trade_plan is included in full state log output."
       test:
         file: "tradingagents/graph/trading_graph.py"
         function: "_log_state"
+        command: "python -m compileall ."
+    - id: "AC-003"
+      statement: "TradePlan parse failure is treated as run failure and surfaced as TRADEPLAN_PARSE_FAILED."
+      test:
+        file: "tradingagents/output/trade_plan_builder.py"
+        function: "build"
         command: "python -m compileall ."
 
 verification:

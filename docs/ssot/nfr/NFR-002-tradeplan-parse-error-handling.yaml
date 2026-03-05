@@ -3,7 +3,7 @@ template_type: "nfr"
 
 meta:
   id: "NFR-002"
-  title: "Safe fallback on TradePlan parse failure"
+  title: "TradePlan parse error handling"
   state: "active"
   priority: "critical"
   category: "reliability"
@@ -25,21 +25,22 @@ links:
 
 spec:
   summary: |
-    TradePlan parse/validation failure must degrade safely and deterministically.
+    TradePlan parse/validation failure must be surfaced as explicit run error deterministically.
 
   requirements:
-    - description: "After retry exhaustion, output HOLD with confidence=0 and rationale=parse_error."
-    - description: "Error context must be attached for diagnostics."
+    - description: "After retry exhaustion, raise TRADEPLAN_PARSE_FAILED and mark run as failed."
+    - description: "Error context must be included in failure record for diagnostics."
 
   design:
     meta_keys:
       - "parse_error"
       - "json_repair_max_retries"
+      - "error"
 
   slo:
     sli:
-      name: "tradeplan.safe_fallback_enforced"
-      query: "fallback shape always valid"
+      name: "tradeplan.parse_failure_error_surface_rate"
+      query: "retry-exhausted parse failures are surfaced as errors"
     target: "100%"
     burn_rate_alert: true
     evaluation_window: "1d"
@@ -51,7 +52,7 @@ spec:
 
   acceptance:
     - id: "AC-001"
-      statement: "Fallback TradePlan is valid and action is HOLD on parse failure."
+      statement: "Retry-exhausted parse failures are surfaced as explicit failures."
       test:
         file: "tradingagents/output/trade_plan_builder.py"
         function: "build"
@@ -63,7 +64,7 @@ verification:
       command: "python -m compileall ."
 
 trace:
-  ssot_path: "docs/ssot/nfr/NFR-002-safe-parse-fallback.yaml"
+  ssot_path: "docs/ssot/nfr/NFR-002-tradeplan-parse-error-handling.yaml"
   minio_key: "projects/{project}/ssot/nfr/NFR-002.json"
   index_status: "pending"
 

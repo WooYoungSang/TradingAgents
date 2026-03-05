@@ -10,7 +10,7 @@ Canonical SSOT records are split by type, and each item has its own YAML file.
 
 ## NFR (Non-Functional Requirements)
 - `docs/ssot/nfr/NFR-001-config-reproducibility.yaml`
-- `docs/ssot/nfr/NFR-002-safe-parse-fallback.yaml`
+- `docs/ssot/nfr/NFR-002-tradeplan-parse-error-handling.yaml`
 - `docs/ssot/nfr/NFR-003-log-contract-stability.yaml`
 - `docs/ssot/nfr/NFR-004-experiment-metrics-consistency.yaml`
 
@@ -18,6 +18,3 @@ Canonical SSOT records are split by type, and each item has its own YAML file.
 - `docs/ssot/adr/ADR-0002-local-llm-standard-openai-compatible.yaml`
 - `docs/ssot/adr/ADR-0003-structured-output-tradeplan-v1.yaml`
 - `docs/ssot/adr/ADR-0004-ssot-split-fr-nfr-adr.yaml`
-
-## Legacy Compatibility
-- `docs/ADR/ADR-0003-structured-output-tradeplan-v1.md` is kept as legacy markdown reference.

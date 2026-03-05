@@ -40,7 +40,7 @@ spec:
     sli:
       name: "log.trade_plan_presence_rate"
       query: "trade_plan present in successful logs"
-    target: ">= 0.95"
+    target: "100%"
     burn_rate_alert: true
     evaluation_window: "1d"
 

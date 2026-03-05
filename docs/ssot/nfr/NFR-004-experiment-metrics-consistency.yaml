@@ -29,11 +29,13 @@ spec:
 
   requirements:
     - description: "summary.json includes parse_error_rate, average_runtime_sec, and action_distribution keys."
+    - description: "parse_error_rate denominator is total_runs."
     - description: "action_distribution always contains BUY/SELL/HOLD keys."
 
   design:
     meta_keys:
       - "parse_error_rate"
+      - "total_runs"
       - "average_runtime_sec"
       - "action_distribution"
 
