@@ -35,6 +35,7 @@ Current baseline follows upstream structure:
 
 ## ADR Index
 - ADR-0002: Local LLM standard = OpenAI-compatible server (vLLM)
+- ADR-0003: Structured output = TradePlan.v1
 
 ## 5) Config Contract (Current)
 `DEFAULT_CONFIG` keys currently used by runtime:
@@ -69,18 +70,34 @@ Planned extensions (PR-2+):
 - Optional split endpoints for deep/quick LLM backends.
 - Config versioning field for migration safety.
 
-## 6) Output Contract Placeholder: `TradePlan.v1`
-Status: placeholder for later implementation.
+## 6) Output Contract: `TradePlan.v1`
+`TradePlan.v1` is emitted on every run in addition to the existing string decision output.
 
-Planned minimum fields:
-- `schema_version` (e.g., `TradePlan.v1`)
-- `ticker`
-- `trade_date`
-- `decision` (`BUY` | `SELL` | `HOLD`)
-- `confidence` (0.0-1.0)
-- `rationale_summary`
-- `risk_notes`
-- `sources` (high-level provenance only)
+Required fields:
+- `schema_version`: string (`tradeplan.v1`)
+- `symbol`: ticker symbol string
+- `date`: trade date string (`YYYY-MM-DD`)
+- `action`: `BUY | SELL | HOLD`
+- `position_size`: object with:
+  - `type`: `fraction | shares | usd`
+  - `value`: number
+- `constraints`: object with:
+  - `time_in_force`: `day | gtc`
+  - `max_slippage_bps`: number
+  - optional additional constraint keys
+- `confidence`: number in range `[0, 1]`
+- `rationale`: short string
+- `evidence_refs`: list of strings
+
+Parsing and repair rules:
+- Builder uses `quick_think_llm` and requests strict JSON output (no markdown).
+- Builder validates JSON against TradePlan.v1 schema.
+- Repair loop retries malformed output up to `json_repair_max_retries`.
+- On final failure, system emits safe fallback:
+  - `action = HOLD`
+  - `confidence = 0`
+  - `rationale = "parse_error"`
+  - includes parse error note in plan metadata
 
 ## 7) Logging Contract (Current + Convention)
 Current runtime writes:

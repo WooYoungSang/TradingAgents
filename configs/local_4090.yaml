@@ -9,6 +9,9 @@ deep_think_llm: "nvidia/Mistral-NeMo-12B-Instruct"
 max_debate_rounds: 1
 max_risk_discuss_rounds: 1
 max_recur_limit: 80
+output_schema_version: "tradeplan.v1"
+json_repair_max_retries: 2
+evidence_mode: "cache_ref"
 
 # Keep upstream-friendly data vendor defaults.
 data_vendors:
