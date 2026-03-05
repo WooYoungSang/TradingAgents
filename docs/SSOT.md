@@ -108,3 +108,32 @@ Conventions for this fork:
 - Keep all generated run artifacts under `results/` and `eval_results/`.
 - Use date-based names (`YYYY-MM-DD`) and stable snake_case file names.
 - Do not commit generated outputs to git.
+
+## 8) Experiment Contract (PR-5)
+Batch evaluation artifacts are stored under:
+- `results/experiments/<exp_id>/`
+
+Expected files:
+- `config_effective.yaml`: merged runtime config used for all runs.
+- `runs.jsonl`: one JSON object per `(symbol, date)` run.
+- `summary.json`: aggregate metrics for the batch.
+
+`runs.jsonl` required keys:
+- `exp_id`
+- `symbol`
+- `date`
+- `status` (`ok` or `failed`)
+- `runtime_sec`
+- `decision` (legacy decision output)
+- `trade_plan` (TradePlan.v1 object or null on failure)
+- `parse_error` (boolean)
+- `log_ref` (path to graph state log)
+- `error` (null or error text)
+
+`summary.json` metrics keys:
+- `parse_error_rate`
+- `average_runtime_sec`
+- `action_distribution` (BUY/SELL/HOLD counts)
+- `total_runs`
+- `success_runs`
+- `failed_runs`

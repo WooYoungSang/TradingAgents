@@ -1,0 +1,22 @@
+llm_provider: "openai"
+backend_url: "https://api.openai.com/v1"
+
+# Cloud baseline placeholders (replace with your target models if needed).
+quick_think_llm: "gpt-5-mini"
+deep_think_llm: "gpt-5.2"
+
+# Keep comparable runtime knobs across environments.
+max_debate_rounds: 1
+max_risk_discuss_rounds: 1
+max_recur_limit: 80
+output_schema_version: "tradeplan.v1"
+json_repair_max_retries: 2
+evidence_mode: "cache_ref"
+
+data_vendors:
+  core_stock_apis: "yfinance"
+  technical_indicators: "yfinance"
+  fundamental_data: "yfinance"
+  news_data: "yfinance"
+
+tool_vendors: {}

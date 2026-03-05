@@ -24,3 +24,16 @@ Root `main.py` usage:
 - Set `TRADINGAGENTS_CONFIG=/path/to/config.yaml` to override defaults.
 - If not set, `configs/local_4090.yaml` is used when present.
 - If neither is available, the legacy hardcoded example config is used.
+
+Experiment usage:
+```bash
+python eval/run_experiment.py \
+  --config configs/local_4090.yaml \
+  --symbols "AAPL,MSFT" \
+  --dates "2026-01-01:2026-01-03"
+
+python eval/run_experiment.py \
+  --config configs/cloud_eval.yaml \
+  --symbols "AAPL,MSFT" \
+  --dates "2026-01-01:2026-01-03"
+```
