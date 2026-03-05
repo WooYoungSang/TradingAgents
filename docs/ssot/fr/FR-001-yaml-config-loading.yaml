@@ -1,0 +1,99 @@
+schema_version: "2.3.1"
+template_type: "fr"
+
+meta:
+  id: "FR-001"
+  title: "YAML config loading over DEFAULT_CONFIG"
+  state: "active"
+  priority: "critical"
+  category: "core"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+  change_policy:
+    requires_new_version_for:
+      - "spec.contract"
+      - "spec.acceptance"
+
+links:
+  project: "tradingagents-fork"
+  nfr: ["NFR-001"]
+  adr: ["ADR-0004"]
+  uow: []
+  ref: ["tradingagents/config_loader.py"]
+
+spec:
+  summary: |
+    Runtime must support YAML overrides merged onto DEFAULT_CONFIG with backward compatibility.
+
+  contract:
+    operation_id: "load_config"
+    version: "1.0.0"
+    breaking_change: false
+    kind: "tool"
+    transport:
+      http:
+        enabled: false
+        base_path: "/tools"
+        endpoints: []
+      mcp:
+        tool_name: "load_config"
+
+    inputs:
+      - name: "path"
+        type: "string|null"
+        required: false
+      - name: "base"
+        type: "object"
+        required: true
+
+    outputs:
+      - name: "config"
+        type: "object"
+
+    errors:
+      - code: "INVALID_YAML_ROOT"
+        http_status: 400
+
+    timeout: "2s"
+    otel_span: "tool.load_config"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "When path is null, base config is preserved."
+      test:
+        file: "tradingagents/config_loader.py"
+        function: "load_config"
+        command: "python -m compileall ."
+    - id: "AC-002"
+      statement: "Nested keys such as data_vendors/tool_vendors are deep-merged."
+      test:
+        file: "tradingagents/config_loader.py"
+        function: "merge_config"
+        command: "python -m compileall ."
+
+verification:
+  checks:
+    - type: "schema_validate"
+      command: "ssot lint fr {{ssot_path}}"
+
+trace:
+  ssot_path: "docs/ssot/fr/FR-001-yaml-config-loading.yaml"
+  minio_key: "projects/{project}/ssot/fr/FR-001.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "fr"
+      doc_id: "FR-001"
+      state: "active"
+      operation_id: "load_config"
+  embed:
+    include_paths: ["spec.contract", "spec.acceptance"]

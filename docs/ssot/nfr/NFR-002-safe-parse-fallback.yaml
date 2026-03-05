@@ -1,0 +1,78 @@
+schema_version: "2.3.1"
+template_type: "nfr"
+
+meta:
+  id: "NFR-002"
+  title: "Safe fallback on TradePlan parse failure"
+  state: "active"
+  priority: "critical"
+  category: "reliability"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-003"]
+  adr: ["ADR-0003"]
+  uow: []
+  ref: ["tradingagents/output/trade_plan_builder.py"]
+
+spec:
+  summary: |
+    TradePlan parse/validation failure must degrade safely and deterministically.
+
+  requirements:
+    - description: "After retry exhaustion, output HOLD with confidence=0 and rationale=parse_error."
+    - description: "Error context must be attached for diagnostics."
+
+  design:
+    meta_keys:
+      - "parse_error"
+      - "json_repair_max_retries"
+
+  slo:
+    sli:
+      name: "tradeplan.safe_fallback_enforced"
+      query: "fallback shape always valid"
+    target: "100%"
+    burn_rate_alert: true
+    evaluation_window: "1d"
+
+  checks:
+    - type: "reliability"
+      threshold_ms: 0
+      percentile: "p95"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "Fallback TradePlan is valid and action is HOLD on parse failure."
+      test:
+        file: "tradingagents/output/trade_plan_builder.py"
+        function: "build"
+        command: "python -m compileall ."
+
+verification:
+  checks:
+    - type: "perf_test"
+      command: "python -m compileall ."
+
+trace:
+  ssot_path: "docs/ssot/nfr/NFR-002-safe-parse-fallback.yaml"
+  minio_key: "projects/{project}/ssot/nfr/NFR-002.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "nfr"
+      doc_id: "NFR-002"
+      state: "active"
+  embed:
+    include_paths: ["spec.slo", "spec.acceptance"]

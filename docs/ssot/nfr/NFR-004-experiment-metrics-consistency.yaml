@@ -1,0 +1,79 @@
+schema_version: "2.3.1"
+template_type: "nfr"
+
+meta:
+  id: "NFR-004"
+  title: "Experiment metrics consistency"
+  state: "active"
+  priority: "medium"
+  category: "observability"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-004"]
+  adr: ["ADR-0004"]
+  uow: []
+  ref: ["eval/run_experiment.py", "docs/SSOT.md"]
+
+spec:
+  summary: |
+    Experiment summary metrics must be stable and comparable across local and cloud runs.
+
+  requirements:
+    - description: "summary.json includes parse_error_rate, average_runtime_sec, and action_distribution keys."
+    - description: "action_distribution always contains BUY/SELL/HOLD keys."
+
+  design:
+    meta_keys:
+      - "parse_error_rate"
+      - "average_runtime_sec"
+      - "action_distribution"
+
+  slo:
+    sli:
+      name: "experiment.metrics_completeness"
+      query: "all required metric keys present"
+    target: "100%"
+    burn_rate_alert: true
+    evaluation_window: "1d"
+
+  checks:
+    - type: "latency"
+      threshold_ms: 0
+      percentile: "p95"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "summary.json has required metric keys for every experiment run."
+      test:
+        file: "eval/run_experiment.py"
+        function: "run_experiment"
+        command: "python eval/run_experiment.py --config configs/cloud_eval.yaml --symbols 'AAPL' --dates '2026-01-01'"
+
+verification:
+  checks:
+    - type: "perf_test"
+      command: "python -m compileall ."
+
+trace:
+  ssot_path: "docs/ssot/nfr/NFR-004-experiment-metrics-consistency.yaml"
+  minio_key: "projects/{project}/ssot/nfr/NFR-004.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "nfr"
+      doc_id: "NFR-004"
+      state: "active"
+  embed:
+    include_paths: ["spec.slo", "spec.acceptance"]
