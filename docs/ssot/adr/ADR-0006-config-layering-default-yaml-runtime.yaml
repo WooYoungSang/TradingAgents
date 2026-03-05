@@ -1,0 +1,82 @@
+schema_version: "2.3.1"
+template_type: "adr"
+
+meta:
+  id: "ADR-0006"
+  title: "Config layering = DEFAULT + YAML + runtime selection"
+  status: "accepted"
+  date: "2026-03-05"
+  deciders:
+    - "TradingAgents Fork Maintainers"
+  category: "architecture"
+
+governance:
+  immutability: "mutable"
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-001", "FR-006", "FR-008"]
+  nfr: ["NFR-007"]
+  uow: []
+  ref:
+    - "tradingagents/default_config.py"
+    - "tradingagents/config_loader.py"
+    - "cli/main.py"
+    - "main.py"
+  deprecates: []
+
+spec:
+  context: |
+    Fork evolution needs configurable runtime behavior without breaking existing default paths.
+
+  decision: |
+    Keep DEFAULT_CONFIG as baseline, merge optional YAML override, then apply runtime/session selections.
+    Preserve DEFAULT_CONFIG.copy() compatibility while enabling local/cloud profile switching.
+
+  alternatives:
+    - id: "ALT-001"
+      title: "YAML-only configuration"
+      description: "Remove DEFAULT_CONFIG and require YAML"
+      rejected_reason: "Breaks existing callers and increases migration risk"
+
+  consequences:
+    positive:
+      - "Backward compatibility for existing code paths"
+      - "Progressive migration to YAML configs"
+    negative:
+      - "Multiple config layers can increase reasoning complexity"
+    risks:
+      - risk: "Unexpected precedence bugs"
+        mitigation: "Single merge utility and explicit docs"
+
+implementation:
+  files:
+    create: []
+    modify:
+      - "tradingagents/config_loader.py"
+      - "cli/main.py"
+      - "main.py"
+    delete: []
+  verification:
+    tests: []
+    commands: ["python -m compileall ."]
+
+verification:
+  checks:
+    - type: "schema_validate"
+      command: "ssot lint adr {{ssot_path}}"
+
+trace:
+  ssot_path: "docs/ssot/adr/ADR-0006-config-layering-default-yaml-runtime.yaml"
+  minio_key: "projects/{project}/ssot/adr/ADR-0006.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "adr"
+      doc_id: "ADR-0006"
+      state: "accepted"
+  embed:
+    include_paths: ["spec.context", "spec.decision", "spec.alternatives", "spec.consequences"]

@@ -1,0 +1,80 @@
+schema_version: "2.3.1"
+template_type: "nfr"
+
+meta:
+  id: "NFR-007"
+  title: "Provider compatibility constraints"
+  state: "active"
+  priority: "high"
+  category: "reliability"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-006"]
+  adr: ["ADR-0006"]
+  uow: []
+  ref:
+    - "tradingagents/llm_clients/openai_client.py"
+
+spec:
+  summary: |
+    Client parameter handling must stay compatible across OpenAI-compatible and reasoning model variants.
+
+  requirements:
+    - description: "Reasoning model calls strip unsupported generation params (temperature/top_p)."
+    - description: "Provider-specific endpoint and key handling remain deterministic."
+
+  design:
+    meta_keys:
+      - "provider"
+      - "base_url"
+      - "reasoning_effort"
+
+  slo:
+    sli:
+      name: "provider.compatibility_failures"
+      query: "provider-parameter compatibility failures"
+    target: "0"
+    burn_rate_alert: true
+    evaluation_window: "1d"
+
+  checks:
+    - type: "reliability"
+      threshold_ms: 0
+      percentile: "p95"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "UnifiedChatOpenAI removes incompatible params for reasoning-model naming patterns."
+      test:
+        file: "tradingagents/llm_clients/openai_client.py"
+        function: "_is_reasoning_model"
+        command: "python -m compileall ."
+
+verification:
+  checks:
+    - type: "perf_test"
+      command: "python -m compileall ."
+
+trace:
+  ssot_path: "docs/ssot/nfr/NFR-007-provider-compatibility-constraints.yaml"
+  minio_key: "projects/{project}/ssot/nfr/NFR-007.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "nfr"
+      doc_id: "NFR-007"
+      state: "active"
+  embed:
+    include_paths: ["spec.slo", "spec.acceptance"]

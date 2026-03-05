@@ -1,0 +1,103 @@
+schema_version: "2.3.1"
+template_type: "fr"
+
+meta:
+  id: "FR-007"
+  title: "Data vendor routing with tool-level precedence and fallback"
+  state: "active"
+  priority: "high"
+  category: "core"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+  change_policy:
+    requires_new_version_for:
+      - "spec.contract"
+      - "spec.acceptance"
+
+links:
+  project: "tradingagents-fork"
+  nfr: ["NFR-006"]
+  adr: ["ADR-0007"]
+  uow: []
+  ref:
+    - "tradingagents/dataflows/interface.py"
+    - "tradingagents/dataflows/config.py"
+
+spec:
+  summary: |
+    Dataflow calls shall route by tool/category vendor config, with tool_vendors overriding data_vendors and rate-limit-triggered fallback.
+
+  contract:
+    operation_id: "route_to_vendor"
+    version: "1.0.0"
+    breaking_change: false
+    kind: "tool"
+    transport:
+      http:
+        enabled: false
+        base_path: "/tools"
+        endpoints: []
+      mcp:
+        tool_name: "route_to_vendor"
+
+    inputs:
+      - name: "method"
+        type: "string"
+        required: true
+      - name: "args"
+        type: "array"
+        required: false
+
+    outputs:
+      - name: "vendor_result"
+        type: "object"
+
+    errors:
+      - code: "METHOD_NOT_SUPPORTED"
+        http_status: 400
+      - code: "NO_AVAILABLE_VENDOR"
+        http_status: 503
+
+    timeout: "30s"
+    otel_span: "tool.route_to_vendor"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "Tool-level vendor setting takes precedence over category-level vendor setting."
+      test:
+        file: "tradingagents/dataflows/interface.py"
+        function: "get_vendor"
+        command: "python -m compileall ."
+    - id: "AC-002"
+      statement: "AlphaVantage rate limit can trigger vendor fallback chain."
+      test:
+        file: "tradingagents/dataflows/interface.py"
+        function: "route_to_vendor"
+        command: "python -m compileall ."
+
+verification:
+  checks:
+    - type: "schema_validate"
+      command: "ssot lint fr {{ssot_path}}"
+
+trace:
+  ssot_path: "docs/ssot/fr/FR-007-data-vendor-routing.yaml"
+  minio_key: "projects/{project}/ssot/fr/FR-007.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "fr"
+      doc_id: "FR-007"
+      state: "active"
+      operation_id: "route_to_vendor"
+  embed:
+    include_paths: ["spec.contract", "spec.acceptance"]

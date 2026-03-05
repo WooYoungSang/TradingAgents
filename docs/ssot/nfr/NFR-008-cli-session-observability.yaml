@@ -1,0 +1,79 @@
+schema_version: "2.3.1"
+template_type: "nfr"
+
+meta:
+  id: "NFR-008"
+  title: "CLI session observability"
+  state: "active"
+  priority: "medium"
+  category: "observability"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-008"]
+  adr: ["ADR-0005"]
+  uow: []
+  ref:
+    - "cli/main.py"
+
+spec:
+  summary: |
+    CLI runs should expose actionable runtime trace data via message/tool logs and report sections.
+
+  requirements:
+    - description: "Session writes message/tool call log with timestamps."
+    - description: "Intermediate report sections are persisted during run."
+
+  design:
+    meta_keys:
+      - "message_tool.log"
+      - "report sections"
+
+  slo:
+    sli:
+      name: "cli.observability_artifact_presence"
+      query: "session observability artifacts exist"
+    target: ">= 0.95"
+    burn_rate_alert: true
+    evaluation_window: "1d"
+
+  checks:
+    - type: "latency"
+      threshold_ms: 0
+      percentile: "p95"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "CLI writes timestamped message/tool events and report section files during run."
+      test:
+        file: "cli/main.py"
+        function: "run_analysis"
+        command: "python -m compileall ."
+
+verification:
+  checks:
+    - type: "perf_test"
+      command: "python -m compileall ."
+
+trace:
+  ssot_path: "docs/ssot/nfr/NFR-008-cli-session-observability.yaml"
+  minio_key: "projects/{project}/ssot/nfr/NFR-008.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "nfr"
+      doc_id: "NFR-008"
+      state: "active"
+  embed:
+    include_paths: ["spec.slo", "spec.acceptance"]
