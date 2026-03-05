@@ -13,6 +13,9 @@ Naming conventions:
 Guidelines:
 - Keep keys aligned with the documented config contract in `docs/SSOT.md`.
 - Add migration notes when introducing new keys or defaults.
+- Layering contract:
+  - `load_config(path=None, base=...)` preserves the baseline config (returns an isolated copy).
+  - YAML overrides are deep-merged for nested mappings such as vendor selections.
 
 CLI usage:
 ```bash

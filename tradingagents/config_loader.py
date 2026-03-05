@@ -51,7 +51,8 @@ def merge_config(base: dict, override: dict) -> dict:
 def load_config(path: str | None, base: dict) -> dict:
     """Load path-based YAML config and merge into base config."""
     if path is None:
-        return base
+        # Keep callers safe from accidental mutation when no override file is used.
+        return copy.deepcopy(base)
 
     override = load_yaml_config(path)
     return merge_config(base, override)
