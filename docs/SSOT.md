@@ -33,6 +33,9 @@ Current baseline follows upstream structure:
 - PR-4: Logging and run metadata normalization for reproducibility.
 - PR-5: Integration polish, docs hardening, and compatibility checks against upstream.
 
+## ADR Index
+- ADR-0002: Local LLM standard = OpenAI-compatible server (vLLM)
+
 ## 5) Config Contract (Current)
 `DEFAULT_CONFIG` keys currently used by runtime:
 - `project_dir`

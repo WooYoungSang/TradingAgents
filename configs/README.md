@@ -1,4 +1,4 @@
-# Configs Directory (Planned)
+# Configs Directory
 
 This directory contains YAML runtime configs introduced in PR-2.
 
@@ -6,7 +6,7 @@ Current state:
 - Runtime baseline remains `tradingagents/default_config.py` (`DEFAULT_CONFIG`).
 - YAML overrides are loaded by `tradingagents/config_loader.py`.
 
-Planned naming conventions:
+Naming conventions:
 - `local_4090.yaml`: local development and 24GB VRAM profile.
 - `cloud_eval.yaml`: cloud or CI-style evaluation profile.
 
@@ -16,8 +16,8 @@ Guidelines:
 
 CLI usage:
 ```bash
-python -m cli.main analyze --config configs/local_4090.yaml
-python -m cli.main analyze --config configs/local_4090.yaml --print-effective-config
+python -m cli.main --config configs/local_4090.yaml
+python -m cli.main --config configs/local_4090.yaml --print-effective-config
 ```
 
 Root `main.py` usage:

@@ -1,0 +1,21 @@
+llm_provider: "openai"
+backend_url: "http://127.0.0.1:8000/v1"
+
+# Non-China-origin model placeholders for local RTX 4090 usage.
+quick_think_llm: "meta-llama/Llama-3.1-8B-Instruct"
+deep_think_llm: "nvidia/Mistral-NeMo-12B-Instruct"
+
+# Conservative runtime defaults.
+max_debate_rounds: 1
+max_risk_discuss_rounds: 1
+max_recur_limit: 80
+
+# Keep upstream-friendly data vendor defaults.
+data_vendors:
+  core_stock_apis: "yfinance"
+  technical_indicators: "yfinance"
+  fundamental_data: "yfinance"
+  news_data: "yfinance"
+
+# Optional tool-level overrides.
+tool_vendors: {}
