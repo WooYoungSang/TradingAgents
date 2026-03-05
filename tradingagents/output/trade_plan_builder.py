@@ -9,6 +9,10 @@ from typing import Any, Dict, List
 from tradingagents.contracts.trade_plan import TradePlanV1
 
 
+class TradePlanParseError(RuntimeError):
+    """Raised when TradePlan JSON cannot be produced after repair retries."""
+
+
 class TradePlanBuilder:
     """Build TradePlan.v1 payloads using the quick thinking LLM."""
 
@@ -24,7 +28,7 @@ class TradePlanBuilder:
         extracted_action: str,
         final_state: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Build a validated TradePlan.v1 dictionary with safe fallback."""
+        """Build a validated TradePlan.v1 dictionary or raise parse error."""
         retries = int(self.config.get("json_repair_max_retries", 2))
         schema_version = str(self.config.get("output_schema_version", "tradeplan.v1"))
         evidence_refs = self._collect_evidence_refs(final_state)
@@ -63,14 +67,13 @@ class TradePlanBuilder:
                 error_note = str(exc)
                 previous_output = str(llm_output)
 
-        safe_plan = TradePlanV1.safe_hold(
-            symbol=symbol,
-            date=trade_date,
-            error_note=error_note,
-            evidence_refs=evidence_refs,
-            schema_version=schema_version,
+        error_message = (
+            "TRADEPLAN_PARSE_FAILED: "
+            f"symbol={symbol}, date={trade_date}, retries={retries}, "
+            f"last_error={error_note}, "
+            f"evidence_refs={json.dumps(evidence_refs)}"
         )
-        return safe_plan.to_dict()
+        raise TradePlanParseError(error_message)
 
     @staticmethod
     def _system_prompt() -> str:
