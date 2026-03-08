@@ -1,0 +1,81 @@
+schema_version: "2.3.1"
+template_type: "nfr"
+
+meta:
+  id: "NFR-006"
+  title: "Data and artifact path stability"
+  state: "active"
+  priority: "high"
+  category: "reliability"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-007", "FR-008"]
+  adr: ["ADR-0007"]
+  uow: []
+  ref:
+    - "tradingagents/default_config.py"
+    - "cli/main.py"
+    - "tradingagents/graph/trading_graph.py"
+
+spec:
+  summary: |
+    Runtime artifacts and cache paths must remain stable and configuration-driven.
+
+  requirements:
+    - description: "Results and evaluation artifacts are written under results_dir/eval_results conventions."
+    - description: "Data cache path remains under project_dir/dataflows/data_cache unless overridden."
+
+  design:
+    meta_keys:
+      - "results_dir"
+      - "data_cache_dir"
+
+  slo:
+    sli:
+      name: "artifact.path_contract_breaks"
+      query: "path contract breaks per release"
+    target: "0"
+    burn_rate_alert: true
+    evaluation_window: "7d"
+
+  checks:
+    - type: "latency"
+      threshold_ms: 0
+      percentile: "p95"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "CLI and graph continue writing artifacts under documented path contracts."
+      test:
+        file: "cli/main.py"
+        function: "run_analysis"
+        command: "python -m compileall ."
+
+verification:
+  checks:
+    - type: "perf_test"
+      command: "python -m compileall ."
+
+trace:
+  ssot_path: "docs/ssot/nfr/NFR-006-data-artifact-path-stability.yaml"
+  minio_key: "projects/{project}/ssot/nfr/NFR-006.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "nfr"
+      doc_id: "NFR-006"
+      state: "active"
+  embed:
+    include_paths: ["spec.slo", "spec.acceptance"]

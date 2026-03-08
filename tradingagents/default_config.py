@@ -19,6 +19,10 @@ DEFAULT_CONFIG = {
     "max_debate_rounds": 1,
     "max_risk_discuss_rounds": 1,
     "max_recur_limit": 100,
+    # Structured output configuration
+    "output_schema_version": "tradeplan.v1",
+    "json_repair_max_retries": 2,
+    "evidence_mode": "cache_ref",
     # Data vendor configuration
     # Category-level configuration (default for all tools in category)
     "data_vendors": {

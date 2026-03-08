@@ -1,0 +1,79 @@
+schema_version: "2.3.1"
+template_type: "nfr"
+
+meta:
+  id: "NFR-002"
+  title: "TradePlan parse error handling"
+  state: "active"
+  priority: "critical"
+  category: "reliability"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-003"]
+  adr: ["ADR-0003"]
+  uow: []
+  ref: ["tradingagents/output/trade_plan_builder.py"]
+
+spec:
+  summary: |
+    TradePlan parse/validation failure must be surfaced as explicit run error deterministically.
+
+  requirements:
+    - description: "After retry exhaustion, raise TRADEPLAN_PARSE_FAILED and mark run as failed."
+    - description: "Error context must be included in failure record for diagnostics."
+
+  design:
+    meta_keys:
+      - "parse_error"
+      - "json_repair_max_retries"
+      - "error"
+
+  slo:
+    sli:
+      name: "tradeplan.parse_failure_error_surface_rate"
+      query: "retry-exhausted parse failures are surfaced as errors"
+    target: "100%"
+    burn_rate_alert: true
+    evaluation_window: "1d"
+
+  checks:
+    - type: "reliability"
+      threshold_ms: 0
+      percentile: "p95"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "Retry-exhausted parse failures are surfaced as explicit failures."
+      test:
+        file: "tradingagents/output/trade_plan_builder.py"
+        function: "build"
+        command: "python -m compileall ."
+
+verification:
+  checks:
+    - type: "perf_test"
+      command: "python -m compileall ."
+
+trace:
+  ssot_path: "docs/ssot/nfr/NFR-002-tradeplan-parse-error-handling.yaml"
+  minio_key: "projects/{project}/ssot/nfr/NFR-002.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "nfr"
+      doc_id: "NFR-002"
+      state: "active"
+  embed:
+    include_paths: ["spec.slo", "spec.acceptance"]

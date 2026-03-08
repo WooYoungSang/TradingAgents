@@ -1,0 +1,113 @@
+schema_version: "2.3.1"
+template_type: "fr"
+
+meta:
+  id: "FR-003"
+  title: "TradePlan.v1 structured output emission"
+  state: "active"
+  priority: "critical"
+  category: "core"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+  change_policy:
+    requires_new_version_for:
+      - "spec.contract"
+      - "spec.acceptance"
+
+links:
+  project: "tradingagents-fork"
+  nfr: ["NFR-002", "NFR-003"]
+  adr: ["ADR-0003"]
+  uow: []
+  ref:
+    - "tradingagents/contracts/trade_plan.py"
+    - "tradingagents/output/trade_plan_builder.py"
+    - "tradingagents/graph/trading_graph.py"
+
+spec:
+  summary: |
+    Every successful propagate run emits both legacy decision string and validated TradePlan.v1 JSON.
+
+  contract:
+    operation_id: "emit_tradeplan_v1"
+    version: "1.0.0"
+    breaking_change: false
+    kind: "tool"
+    transport:
+      http:
+        enabled: false
+        base_path: "/tools"
+        endpoints: []
+      mcp:
+        tool_name: "emit_tradeplan_v1"
+
+    inputs:
+      - name: "symbol"
+        type: "string"
+        required: true
+      - name: "date"
+        type: "string"
+        required: true
+      - name: "full_decision_text"
+        type: "string"
+        required: true
+
+    outputs:
+      - name: "decision"
+        type: "string"
+      - name: "trade_plan"
+        type: "object"
+
+    errors:
+      - code: "TRADEPLAN_PARSE_FAILED"
+        http_status: 500
+
+    timeout: "10s"
+    otel_span: "tool.emit_tradeplan_v1"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "On successful runs, final_state contains trade_plan and return value still includes decision string."
+      test:
+        file: "tradingagents/graph/trading_graph.py"
+        function: "propagate"
+        command: "python -m compileall ."
+    - id: "AC-002"
+      statement: "On successful runs, trade_plan is included in full state log output."
+      test:
+        file: "tradingagents/graph/trading_graph.py"
+        function: "_log_state"
+        command: "python -m compileall ."
+    - id: "AC-003"
+      statement: "TradePlan parse failure is treated as run failure and surfaced as TRADEPLAN_PARSE_FAILED."
+      test:
+        file: "tradingagents/output/trade_plan_builder.py"
+        function: "build"
+        command: "python -m compileall ."
+
+verification:
+  checks:
+    - type: "schema_validate"
+      command: "ssot lint fr {{ssot_path}}"
+
+trace:
+  ssot_path: "docs/ssot/fr/FR-003-tradeplan-v1-output.yaml"
+  minio_key: "projects/{project}/ssot/fr/FR-003.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "fr"
+      doc_id: "FR-003"
+      state: "active"
+      operation_id: "emit_tradeplan_v1"
+  embed:
+    include_paths: ["spec.contract", "spec.acceptance"]

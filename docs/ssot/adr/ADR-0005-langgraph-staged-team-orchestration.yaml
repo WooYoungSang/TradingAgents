@@ -1,0 +1,82 @@
+schema_version: "2.3.1"
+template_type: "adr"
+
+meta:
+  id: "ADR-0005"
+  title: "Orchestration backbone = LangGraph staged team pipeline"
+  status: "accepted"
+  date: "2026-03-05"
+  deciders:
+    - "TradingAgents Fork Maintainers"
+  category: "architecture"
+
+governance:
+  immutability: "mutable"
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-005", "FR-008"]
+  nfr: ["NFR-005", "NFR-008"]
+  uow: []
+  ref:
+    - "tradingagents/graph/setup.py"
+    - "tradingagents/graph/conditional_logic.py"
+    - "tradingagents/graph/propagation.py"
+  deprecates: []
+
+spec:
+  context: |
+    Multi-agent analysis requires deterministic stage boundaries while preserving iterative debate loops.
+
+  decision: |
+    Use LangGraph as the orchestration backbone with explicit stage order:
+    analysts -> research debate -> trader -> risk debate -> risk judge.
+    Conditional transitions determine tool loops and debate progression.
+
+  alternatives:
+    - id: "ALT-001"
+      title: "Single-pass monolithic chain"
+      description: "Run one prompt chain without staged graph"
+      rejected_reason: "Insufficient control over iterative debate and stage-level outputs"
+
+  consequences:
+    positive:
+      - "Clear stage boundaries and composability"
+      - "Deterministic transition logic"
+    negative:
+      - "Higher graph setup complexity"
+    risks:
+      - risk: "Loop misconfiguration"
+        mitigation: "Round counters and recursion limits"
+
+implementation:
+  files:
+    create: []
+    modify:
+      - "tradingagents/graph/setup.py"
+      - "tradingagents/graph/conditional_logic.py"
+      - "tradingagents/graph/propagation.py"
+    delete: []
+  verification:
+    tests: []
+    commands: ["python -m compileall ."]
+
+verification:
+  checks:
+    - type: "schema_validate"
+      command: "ssot lint adr {{ssot_path}}"
+
+trace:
+  ssot_path: "docs/ssot/adr/ADR-0005-langgraph-staged-team-orchestration.yaml"
+  minio_key: "projects/{project}/ssot/adr/ADR-0005.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "adr"
+      doc_id: "ADR-0005"
+      state: "accepted"
+  embed:
+    include_paths: ["spec.context", "spec.decision", "spec.alternatives", "spec.consequences"]

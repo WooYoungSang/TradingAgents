@@ -19,6 +19,7 @@ from tradingagents.agents.utils.agent_states import (
     RiskDebateState,
 )
 from tradingagents.dataflows.config import set_config
+from tradingagents.output.trade_plan_builder import TradePlanBuilder
 
 # Import the new abstract tool methods from agent_utils
 from tradingagents.agents.utils.agent_utils import (
@@ -121,6 +122,7 @@ class TradingAgentsGraph:
         self.propagator = Propagator()
         self.reflector = Reflector(self.quick_thinking_llm)
         self.signal_processor = SignalProcessor(self.quick_thinking_llm)
+        self.trade_plan_builder = TradePlanBuilder(self.quick_thinking_llm, self.config)
 
         # State tracking
         self.curr_state = None
@@ -209,6 +211,16 @@ class TradingAgentsGraph:
             # Standard mode without tracing
             final_state = self.graph.invoke(init_agent_state, **args)
 
+        decision = self.process_signal(final_state["final_trade_decision"])
+        trade_plan = self.trade_plan_builder.build(
+            symbol=company_name,
+            trade_date=str(trade_date),
+            full_decision_text=final_state["final_trade_decision"],
+            extracted_action=decision,
+            final_state=final_state,
+        )
+        final_state["trade_plan"] = trade_plan
+
         # Store current state for reflection
         self.curr_state = final_state
 
@@ -216,7 +228,7 @@ class TradingAgentsGraph:
         self._log_state(trade_date, final_state)
 
         # Return decision and processed signal
-        return final_state, self.process_signal(final_state["final_trade_decision"])
+        return final_state, decision
 
     def _log_state(self, trade_date, final_state):
         """Log the final state to a JSON file."""
@@ -248,6 +260,7 @@ class TradingAgentsGraph:
             },
             "investment_plan": final_state["investment_plan"],
             "final_trade_decision": final_state["final_trade_decision"],
+            "trade_plan": final_state.get("trade_plan"),
         }
 
         # Save to file

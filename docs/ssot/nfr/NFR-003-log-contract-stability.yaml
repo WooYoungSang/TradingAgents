@@ -1,0 +1,78 @@
+schema_version: "2.3.1"
+template_type: "nfr"
+
+meta:
+  id: "NFR-003"
+  title: "Log contract stability"
+  state: "active"
+  priority: "high"
+  category: "observability"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-003"]
+  adr: ["ADR-0003"]
+  uow: []
+  ref: ["tradingagents/graph/trading_graph.py"]
+
+spec:
+  summary: |
+    Run logs must consistently include legacy decision context and trade_plan for downstream consumers.
+
+  requirements:
+    - description: "full_states_log_<date>.json includes trade_plan field whenever propagate succeeds."
+    - description: "Existing final_trade_decision field remains present for backward compatibility."
+
+  design:
+    meta_keys:
+      - "final_trade_decision"
+      - "trade_plan"
+
+  slo:
+    sli:
+      name: "log.trade_plan_presence_rate"
+      query: "trade_plan present in successful logs"
+    target: "100%"
+    burn_rate_alert: true
+    evaluation_window: "1d"
+
+  checks:
+    - type: "latency"
+      threshold_ms: 0
+      percentile: "p95"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "Log payload includes both final_trade_decision and trade_plan."
+      test:
+        file: "tradingagents/graph/trading_graph.py"
+        function: "_log_state"
+        command: "python -m compileall ."
+
+verification:
+  checks:
+    - type: "perf_test"
+      command: "python -m compileall ."
+
+trace:
+  ssot_path: "docs/ssot/nfr/NFR-003-log-contract-stability.yaml"
+  minio_key: "projects/{project}/ssot/nfr/NFR-003.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "nfr"
+      doc_id: "NFR-003"
+      state: "active"
+  embed:
+    include_paths: ["spec.slo", "spec.acceptance"]

@@ -1,0 +1,102 @@
+schema_version: "2.3.1"
+template_type: "fr"
+
+meta:
+  id: "FR-008"
+  title: "Interactive CLI analysis session and report artifacts"
+  state: "active"
+  priority: "high"
+  category: "core"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+  change_policy:
+    requires_new_version_for:
+      - "spec.contract"
+      - "spec.acceptance"
+
+links:
+  project: "tradingagents-fork"
+  nfr: ["NFR-006", "NFR-008"]
+  adr: ["ADR-0005", "ADR-0006"]
+  uow: []
+  ref:
+    - "cli/main.py"
+
+spec:
+  summary: |
+    CLI shall support interactive analyst selection, merged runtime config selection, and per-run report/log artifact generation.
+
+  contract:
+    operation_id: "cli_analyze_session"
+    version: "1.0.0"
+    breaking_change: false
+    kind: "job"
+    transport:
+      http:
+        enabled: false
+        base_path: "/tools"
+        endpoints: []
+      mcp:
+        tool_name: "analyze"
+
+    inputs:
+      - name: "--config"
+        type: "path|null"
+        required: false
+      - name: "--print-effective-config"
+        type: "boolean"
+        required: false
+
+    outputs:
+      - name: "analysis_output"
+        type: "object"
+      - name: "results/<ticker>/<date>/message_tool.log"
+        type: "file"
+
+    errors:
+      - code: "INVALID_CONFIG_PATH"
+        http_status: 400
+
+    timeout: "600s"
+    otel_span: "job.cli_analyze_session"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "CLI supports --config and --print-effective-config options."
+      test:
+        file: "cli/main.py"
+        function: "analyze"
+        command: "python -m compileall ."
+    - id: "AC-002"
+      statement: "Run artifacts include per-session message and report files under results_dir."
+      test:
+        file: "cli/main.py"
+        function: "run_analysis"
+        command: "python -m compileall ."
+
+verification:
+  checks:
+    - type: "schema_validate"
+      command: "ssot lint fr {{ssot_path}}"
+
+trace:
+  ssot_path: "docs/ssot/fr/FR-008-cli-analysis-session.yaml"
+  minio_key: "projects/{project}/ssot/fr/FR-008.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "fr"
+      doc_id: "FR-008"
+      state: "active"
+      operation_id: "cli_analyze_session"
+  embed:
+    include_paths: ["spec.contract", "spec.acceptance"]

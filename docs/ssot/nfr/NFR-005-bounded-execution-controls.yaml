@@ -1,0 +1,83 @@
+schema_version: "2.3.1"
+template_type: "nfr"
+
+meta:
+  id: "NFR-005"
+  title: "Bounded execution controls for graph traversal"
+  state: "active"
+  priority: "critical"
+  category: "reliability"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-005"]
+  adr: ["ADR-0005"]
+  uow: []
+  ref:
+    - "tradingagents/graph/conditional_logic.py"
+    - "tradingagents/graph/propagation.py"
+    - "tradingagents/default_config.py"
+
+spec:
+  summary: |
+    Graph execution must be bounded by debate/risk rounds and recursion limits.
+
+  requirements:
+    - description: "Debate loop exits at configured max_debate_rounds boundary."
+    - description: "Risk loop exits at configured max_risk_discuss_rounds boundary."
+    - description: "LangGraph recursion uses configured max_recur_limit."
+
+  design:
+    meta_keys:
+      - "max_debate_rounds"
+      - "max_risk_discuss_rounds"
+      - "max_recur_limit"
+
+  slo:
+    sli:
+      name: "graph.unbounded_loop_incidents"
+      query: "unbounded loop incidents per run"
+    target: "0"
+    burn_rate_alert: true
+    evaluation_window: "1d"
+
+  checks:
+    - type: "reliability"
+      threshold_ms: 0
+      percentile: "p95"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "Propagator graph args include recursion_limit from configuration."
+      test:
+        file: "tradingagents/graph/propagation.py"
+        function: "get_graph_args"
+        command: "python -m compileall ."
+
+verification:
+  checks:
+    - type: "perf_test"
+      command: "python -m compileall ."
+
+trace:
+  ssot_path: "docs/ssot/nfr/NFR-005-bounded-execution-controls.yaml"
+  minio_key: "projects/{project}/ssot/nfr/NFR-005.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "nfr"
+      doc_id: "NFR-005"
+      state: "active"
+  embed:
+    include_paths: ["spec.slo", "spec.acceptance"]

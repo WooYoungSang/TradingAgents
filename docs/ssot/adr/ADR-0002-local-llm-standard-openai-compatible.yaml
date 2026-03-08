@@ -1,0 +1,75 @@
+schema_version: "2.3.1"
+template_type: "adr"
+
+meta:
+  id: "ADR-0002"
+  title: "Local LLM standard = OpenAI-compatible server"
+  status: "accepted"
+  date: "2026-03-05"
+  deciders:
+    - "TradingAgents Fork Maintainers"
+  category: "architecture"
+
+governance:
+  immutability: "mutable"
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-002"]
+  nfr: ["NFR-001"]
+  uow: []
+  ref: ["docs/local_llm.md", "configs/local_4090.yaml"]
+  deprecates: []
+
+spec:
+  context: |
+    The fork targets local execution on RTX 4090 and must avoid code changes when switching to local inference.
+
+  decision: |
+    Adopt OpenAI-compatible endpoints (vLLM preferred, Ollama allowed) as the local LLM integration standard.
+    Runtime uses llm_provider=openai with backend_url overrides.
+
+  alternatives:
+    - id: "ALT-001"
+      title: "Provider-specific direct integrations"
+      description: "Implement custom runtime integration per local serving stack"
+      rejected_reason: "Higher maintenance and less configuration portability"
+
+  consequences:
+    positive:
+      - "Uniform runtime interface across local and cloud"
+      - "Config-only switching between endpoints"
+    negative:
+      - "Endpoint must match OpenAI-compatible behavior"
+    risks:
+      - risk: "Provider quirks across local servers"
+        mitigation: "Keep local_4090.yaml defaults conservative and documented"
+
+implementation:
+  files:
+    create: ["configs/local_4090.yaml", "docs/local_llm.md"]
+    modify: []
+    delete: []
+  verification:
+    tests: []
+    commands: ["python -m compileall ."]
+
+verification:
+  checks:
+    - type: "schema_validate"
+      command: "ssot lint adr {{ssot_path}}"
+
+trace:
+  ssot_path: "docs/ssot/adr/ADR-0002-local-llm-standard-openai-compatible.yaml"
+  minio_key: "projects/{project}/ssot/adr/ADR-0002.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "adr"
+      doc_id: "ADR-0002"
+      state: "accepted"
+  embed:
+    include_paths: ["spec.context", "spec.decision", "spec.alternatives", "spec.consequences"]

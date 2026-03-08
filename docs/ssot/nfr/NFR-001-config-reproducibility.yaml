@@ -1,0 +1,77 @@
+schema_version: "2.3.1"
+template_type: "nfr"
+
+meta:
+  id: "NFR-001"
+  title: "Config reproducibility"
+  state: "active"
+  priority: "high"
+  category: "reliability"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-001", "FR-004"]
+  adr: ["ADR-0004"]
+  uow: []
+  ref: ["eval/run_experiment.py"]
+
+spec:
+  summary: |
+    Every experiment run must persist the exact effective configuration.
+
+  requirements:
+    - description: "The effective merged config is written to config_effective.yaml for every experiment."
+
+  design:
+    meta_keys:
+      - "config_path"
+      - "exp_id"
+
+  slo:
+    sli:
+      name: "experiment.config_persist_success"
+      query: "config_effective.yaml exists for every run"
+    target: "100%"
+    burn_rate_alert: true
+    evaluation_window: "1d"
+
+  checks:
+    - type: "reliability"
+      threshold_ms: 0
+      percentile: "p95"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "config_effective.yaml exists in each experiment folder."
+      test:
+        file: "eval/run_experiment.py"
+        function: "run_experiment"
+        command: "python eval/run_experiment.py --config configs/local_4090.yaml --symbols 'AAPL' --dates '2026-01-01'"
+
+verification:
+  checks:
+    - type: "perf_test"
+      command: "python -m compileall ."
+
+trace:
+  ssot_path: "docs/ssot/nfr/NFR-001-config-reproducibility.yaml"
+  minio_key: "projects/{project}/ssot/nfr/NFR-001.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "nfr"
+      doc_id: "NFR-001"
+      state: "active"
+  embed:
+    include_paths: ["spec.slo", "spec.acceptance"]

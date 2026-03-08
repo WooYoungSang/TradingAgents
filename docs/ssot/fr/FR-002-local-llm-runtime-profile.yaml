@@ -1,0 +1,96 @@
+schema_version: "2.3.1"
+template_type: "fr"
+
+meta:
+  id: "FR-002"
+  title: "Local LLM runtime profile for RTX 4090"
+  state: "active"
+  priority: "high"
+  category: "core"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+  change_policy:
+    requires_new_version_for:
+      - "spec.contract"
+      - "spec.acceptance"
+
+links:
+  project: "tradingagents-fork"
+  nfr: ["NFR-001"]
+  adr: ["ADR-0002"]
+  uow: []
+  ref: ["configs/local_4090.yaml", "docs/local_llm.md"]
+
+spec:
+  summary: |
+    Users can run TradingAgents against an OpenAI-compatible local endpoint using only config changes.
+
+  contract:
+    operation_id: "local_llm_profile"
+    version: "1.0.0"
+    breaking_change: false
+    kind: "job"
+    transport:
+      http:
+        enabled: false
+        base_path: "/tools"
+        endpoints: []
+      mcp:
+        tool_name: "local_llm_profile"
+
+    inputs:
+      - name: "backend_url"
+        type: "string"
+        required: true
+      - name: "quick_think_llm"
+        type: "string"
+        required: true
+      - name: "deep_think_llm"
+        type: "string"
+        required: true
+
+    outputs:
+      - name: "effective_runtime_profile"
+        type: "object"
+
+    errors:
+      - code: "ENDPOINT_UNREACHABLE"
+        http_status: 503
+
+    timeout: "10s"
+    otel_span: "job.local_llm_profile"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "CLI run can select local_4090.yaml via --config without editing code."
+      test:
+        file: "configs/local_4090.yaml"
+        function: "n/a"
+        command: "python -m cli.main --config configs/local_4090.yaml --print-effective-config"
+
+verification:
+  checks:
+    - type: "schema_validate"
+      command: "ssot lint fr {{ssot_path}}"
+
+trace:
+  ssot_path: "docs/ssot/fr/FR-002-local-llm-runtime-profile.yaml"
+  minio_key: "projects/{project}/ssot/fr/FR-002.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "fr"
+      doc_id: "FR-002"
+      state: "active"
+      operation_id: "local_llm_profile"
+  embed:
+    include_paths: ["spec.contract", "spec.acceptance"]

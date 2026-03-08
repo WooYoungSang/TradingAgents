@@ -1,0 +1,103 @@
+schema_version: "2.3.1"
+template_type: "fr"
+
+meta:
+  id: "FR-004"
+  title: "Reproducible experiment runner artifacts"
+  state: "active"
+  priority: "high"
+  category: "core"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+  change_policy:
+    requires_new_version_for:
+      - "spec.contract"
+      - "spec.acceptance"
+
+links:
+  project: "tradingagents-fork"
+  nfr: ["NFR-001", "NFR-004"]
+  adr: ["ADR-0004"]
+  uow: []
+  ref: ["eval/run_experiment.py", "configs/cloud_eval.yaml"]
+
+spec:
+  summary: |
+    Batch runs over symbols and dates must produce comparable output artifacts for local/cloud config comparison.
+
+  contract:
+    operation_id: "run_experiment"
+    version: "1.0.0"
+    breaking_change: false
+    kind: "job"
+    transport:
+      http:
+        enabled: false
+        base_path: "/tools"
+        endpoints: []
+      mcp:
+        tool_name: "run_experiment"
+
+    inputs:
+      - name: "config"
+        type: "string"
+        required: true
+      - name: "symbols"
+        type: "string"
+        required: true
+      - name: "dates"
+        type: "string"
+        required: true
+      - name: "out_dir"
+        type: "string"
+        required: false
+
+    outputs:
+      - name: "config_effective.yaml"
+        type: "file"
+      - name: "runs.jsonl"
+        type: "file"
+      - name: "summary.json"
+        type: "file"
+
+    errors:
+      - code: "RUN_FAILED"
+        http_status: 500
+
+    timeout: "1800s"
+    otel_span: "job.run_experiment"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "Experiment run writes config_effective.yaml, runs.jsonl, and summary.json under one experiment folder."
+      test:
+        file: "eval/run_experiment.py"
+        function: "run_experiment"
+        command: "python eval/run_experiment.py --config configs/local_4090.yaml --symbols 'AAPL' --dates '2026-01-01'"
+
+verification:
+  checks:
+    - type: "schema_validate"
+      command: "ssot lint fr {{ssot_path}}"
+
+trace:
+  ssot_path: "docs/ssot/fr/FR-004-experiment-runner.yaml"
+  minio_key: "projects/{project}/ssot/fr/FR-004.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "fr"
+      doc_id: "FR-004"
+      state: "active"
+      operation_id: "run_experiment"
+  embed:
+    include_paths: ["spec.contract", "spec.acceptance"]

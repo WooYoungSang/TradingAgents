@@ -1,0 +1,87 @@
+schema_version: "2.3.1"
+template_type: "adr"
+
+meta:
+  id: "ADR-0007"
+  title: "Data vendor policy = tool-level override first, typed rate-limit fallback"
+  status: "accepted"
+  date: "2026-03-05"
+  deciders:
+    - "TradingAgents Fork Maintainers"
+  category: "architecture"
+
+governance:
+  immutability: "mutable"
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-007"]
+  nfr: ["NFR-006"]
+  uow: ["UOW-201"]
+  ref:
+    - "tradingagents/dataflows/interface.py"
+    - "tradingagents/dataflows/config.py"
+  deprecates: []
+
+spec:
+  context: |
+    Data source behavior must be controllable at fine granularity while remaining resilient to vendor constraints.
+    The current phase introduces Polygon support only for daily stock price retrieval without broadening other tool scopes.
+
+  decision: |
+    Resolve vendor in this order: tool_vendors override -> data_vendors category.
+    Build fallback chain from configured vendors plus remaining supported vendors.
+    Restrict Polygon support to get_stock_data only.
+    Trigger failover only for typed AlphaVantageRateLimitError.
+    Preserve get_stock_data output contract as CSV-compatible string.
+
+  alternatives:
+    - id: "ALT-001"
+      title: "Single fixed vendor"
+      description: "Use one vendor globally"
+      rejected_reason: "Low flexibility and poor resilience to vendor outages/rate limits"
+
+  consequences:
+    positive:
+      - "Fine-grained routing control"
+      - "Deterministic and auditable fallback trigger semantics"
+      - "Improved resilience under typed rate limiting while preserving output compatibility"
+    negative:
+      - "More complex vendor configuration"
+      - "Polygon is intentionally unavailable for indicators/fundamentals/news in this phase"
+    risks:
+      - risk: "Misinterpretation of fallback trigger scope"
+        mitigation: "FR-007 explicitly constrains trigger type to AlphaVantageRateLimitError"
+      - risk: "Scope creep of Polygon to unsupported methods"
+        mitigation: "FR-007 contract and acceptance explicitly limit Polygon to get_stock_data"
+
+implementation:
+  files:
+    create: []
+    modify:
+      - "docs/ssot/fr/FR-007-data-vendor-routing.yaml"
+      - "docs/ssot/adr/ADR-0007-data-vendor-policy-tool-first-fallback.yaml"
+    delete: []
+  verification:
+    tests: []
+    commands: ["python -m compileall ."]
+
+verification:
+  checks:
+    - type: "schema_validate"
+      command: "ssot lint adr {{ssot_path}}"
+
+trace:
+  ssot_path: "docs/ssot/adr/ADR-0007-data-vendor-policy-tool-first-fallback.yaml"
+  minio_key: "projects/{project}/ssot/adr/ADR-0007.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "adr"
+      doc_id: "ADR-0007"
+      state: "accepted"
+  embed:
+    include_paths: ["spec.context", "spec.decision", "spec.alternatives", "spec.consequences"]

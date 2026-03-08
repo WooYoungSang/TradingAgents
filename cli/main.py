@@ -1,5 +1,6 @@
 from typing import Optional
 import datetime
+import json
 import typer
 from pathlib import Path
 from functools import wraps
@@ -23,8 +24,8 @@ from rich import box
 from rich.align import Align
 from rich.rule import Rule
 
-from tradingagents.graph.trading_graph import TradingAgentsGraph
 from tradingagents.default_config import DEFAULT_CONFIG
+from tradingagents.config_loader import load_config
 from cli.models import AnalystType
 from cli.utils import *
 from cli.announcements import fetch_announcements, display_announcements
@@ -896,12 +897,21 @@ def format_tool_args(args, max_length=80) -> str:
         return result[:max_length - 3] + "..."
     return result
 
-def run_analysis():
+def resolve_base_config(config_path: Optional[Path]) -> dict:
+    """Resolve base config from defaults and optional YAML override."""
+    if config_path is None:
+        return DEFAULT_CONFIG.copy()
+    return load_config(str(config_path), DEFAULT_CONFIG.copy())
+
+
+def run_analysis(base_config: Optional[dict] = None):
+    from tradingagents.graph.trading_graph import TradingAgentsGraph
+
     # First get all user selections
     selections = get_user_selections()
 
     # Create config with selected research depth
-    config = DEFAULT_CONFIG.copy()
+    config = base_config.copy() if base_config is not None else DEFAULT_CONFIG.copy()
     config["max_debate_rounds"] = selections["research_depth"]
     config["max_risk_discuss_rounds"] = selections["research_depth"]
     config["quick_think_llm"] = selections["shallow_thinker"]
@@ -1168,8 +1178,31 @@ def run_analysis():
 
 
 @app.command()
-def analyze():
-    run_analysis()
+def analyze(
+    config: Optional[Path] = typer.Option(
+        None,
+        "--config",
+        "-c",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+        help="Path to YAML config file.",
+    ),
+    print_effective_config: bool = typer.Option(
+        False,
+        "--print-effective-config",
+        help="Print merged config and exit.",
+    ),
+):
+    effective_config = resolve_base_config(config)
+
+    if print_effective_config:
+        typer.echo(json.dumps(effective_config, indent=2, sort_keys=True))
+        raise typer.Exit()
+
+    run_analysis(base_config=effective_config)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,105 @@
+schema_version: "2.3.1"
+template_type: "fr"
+
+meta:
+  id: "FR-006"
+  title: "LLM provider routing and endpoint override"
+  state: "active"
+  priority: "critical"
+  category: "core"
+  version: "1.0.0"
+  created: "2026-03-05"
+  updated: "2026-03-05"
+  owner: "tradingagents-fork"
+
+governance:
+  immutability: "mutable"
+  freeze_on_state: "active"
+  change_policy:
+    requires_new_version_for:
+      - "spec.contract"
+      - "spec.acceptance"
+
+links:
+  project: "tradingagents-fork"
+  nfr: ["NFR-007"]
+  adr: ["ADR-0006"]
+  uow: []
+  ref:
+    - "tradingagents/llm_clients/factory.py"
+    - "tradingagents/llm_clients/openai_client.py"
+    - "tradingagents/graph/trading_graph.py"
+
+spec:
+  summary: |
+    Runtime shall route provider names to client implementations and honor backend_url/base_url overrides for OpenAI-compatible serving.
+
+  contract:
+    operation_id: "create_llm_client"
+    version: "1.0.0"
+    breaking_change: false
+    kind: "tool"
+    transport:
+      http:
+        enabled: false
+        base_path: "/tools"
+        endpoints: []
+      mcp:
+        tool_name: "create_llm_client"
+
+    inputs:
+      - name: "provider"
+        type: "string"
+        required: true
+      - name: "model"
+        type: "string"
+        required: true
+      - name: "base_url"
+        type: "string|null"
+        required: false
+
+    outputs:
+      - name: "llm_client"
+        type: "object"
+
+    errors:
+      - code: "UNSUPPORTED_LLM_PROVIDER"
+        http_status: 400
+
+    timeout: "5s"
+    otel_span: "tool.create_llm_client"
+
+  acceptance:
+    - id: "AC-001"
+      statement: "Supported providers map to client classes via create_llm_client."
+      test:
+        file: "tradingagents/llm_clients/factory.py"
+        function: "create_llm_client"
+        command: "python -m compileall ."
+    - id: "AC-002"
+      statement: "OpenAI-compatible client path supports base_url override."
+      test:
+        file: "tradingagents/llm_clients/openai_client.py"
+        function: "get_llm"
+        command: "python -m compileall ."
+
+verification:
+  checks:
+    - type: "schema_validate"
+      command: "ssot lint fr {{ssot_path}}"
+
+trace:
+  ssot_path: "docs/ssot/fr/FR-006-llm-provider-routing.yaml"
+  minio_key: "projects/{project}/ssot/fr/FR-006.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "fr"
+      doc_id: "FR-006"
+      state: "active"
+      operation_id: "create_llm_client"
+  embed:
+    include_paths: ["spec.contract", "spec.acceptance"]
