@@ -60,17 +60,21 @@ class TradePlanBuilder:
                 payload.setdefault("symbol", symbol)
                 payload.setdefault("date", trade_date)
                 payload.setdefault("action", action_hint if action_hint in {"BUY", "SELL", "HOLD"} else "HOLD")
-                payload.setdefault("evidence_refs", evidence_refs)
+                payload["evidence_refs"] = self._merge_evidence_refs(
+                    payload.get("evidence_refs"),
+                    evidence_refs,
+                )
                 plan = TradePlanV1.from_dict(payload)
                 return plan.to_dict()
             except Exception as exc:  # noqa: BLE001
-                error_note = str(exc)
+                error_note = self._format_error(exc)
                 previous_output = str(llm_output)
 
         error_message = (
             "TRADEPLAN_PARSE_FAILED: "
             f"symbol={symbol}, date={trade_date}, retries={retries}, "
-            f"last_error={error_note}, "
+            f"last_error={json.dumps(error_note)}, "
+            f"last_output_excerpt={json.dumps(self._compact_text(previous_output or ''))}, "
             f"evidence_refs={json.dumps(evidence_refs)}"
         )
         raise TradePlanParseError(error_message)
@@ -147,6 +151,32 @@ class TradePlanBuilder:
         if not isinstance(payload, dict):
             raise ValueError("TradePlan payload must be a JSON object.")
         return payload
+
+    @staticmethod
+    def _format_error(exc: Exception) -> str:
+        """Return a compact and deterministic error summary."""
+        return f"{type(exc).__name__}: {TradePlanBuilder._compact_text(str(exc))}"
+
+    @staticmethod
+    def _compact_text(value: str, limit: int = 240) -> str:
+        """Normalize whitespace and cap length for stable diagnostics."""
+        normalized = " ".join(str(value).split())
+        if len(normalized) <= limit:
+            return normalized
+        return f"{normalized[: limit - 3]}..."
+
+    @staticmethod
+    def _merge_evidence_refs(
+        llm_refs: Any,
+        baseline_refs: List[str],
+    ) -> List[str]:
+        """Merge model-provided and baseline evidence refs while preserving order."""
+        merged: List[str] = []
+        for candidate in [*(llm_refs or []), *baseline_refs]:
+            ref = str(candidate).strip()
+            if ref and ref not in merged:
+                merged.append(ref)
+        return merged
 
     def _collect_evidence_refs(self, final_state: Dict[str, Any]) -> List[str]:
         mode = str(self.config.get("evidence_mode", "cache_ref"))
