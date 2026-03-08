@@ -222,3 +222,7 @@ eval_results/
 tradingagents/dataflows/data_cache/
 .env
 *.log
+.scannerwork
+.omx
+.worktrees
+artifacts/
