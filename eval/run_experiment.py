@@ -19,8 +19,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from tradingagents.config_loader import load_config
-from tradingagents.default_config import DEFAULT_CONFIG
+from tradingagents.config_loader import load_config  # noqa: E402
+from tradingagents.default_config import DEFAULT_CONFIG  # noqa: E402
 
 
 def parse_symbols(raw: str) -> list[str]:
@@ -78,10 +78,15 @@ def resolve_experiment_dir(out_dir: str, exp_id: str) -> Path:
     return Path(resolved)
 
 
-def run_experiment(args: argparse.Namespace) -> None:
-    """Execute experiment runs and write comparable artifacts."""
+def load_trading_graph_class() -> type[Any]:
+    """Load the trading graph class lazily for CLI execution and tests."""
     from tradingagents.graph.trading_graph import TradingAgentsGraph
 
+    return TradingAgentsGraph
+
+
+def run_experiment(args: argparse.Namespace) -> None:
+    """Execute experiment runs and write comparable artifacts."""
     exp_id = args.exp_id or f"{datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')}_{Path(args.config).stem}"
     exp_dir = resolve_experiment_dir(args.out_dir, exp_id)
     exp_dir.mkdir(parents=True, exist_ok=True)
@@ -102,7 +107,7 @@ def run_experiment(args: argparse.Namespace) -> None:
     runtimes: list[float] = []
     action_counter: Counter[str] = Counter()
 
-    graph = TradingAgentsGraph(config=effective_config, debug=args.debug)
+    graph = load_trading_graph_class()(config=effective_config, debug=args.debug)
 
     with open(runs_path, "w", encoding="utf-8") as runs_file:
         for symbol in symbols:
