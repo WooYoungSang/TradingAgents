@@ -24,7 +24,7 @@ links:
   project: "tradingagents-fork"
   nfr: ["NFR-001", "NFR-004"]
   adr: ["ADR-0004"]
-  uow: []
+  uow: ["UOW-209"]
   ref: ["eval/run_experiment.py", "configs/cloud_eval.yaml"]
 
 spec:

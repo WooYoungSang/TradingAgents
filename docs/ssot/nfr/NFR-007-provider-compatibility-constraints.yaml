@@ -20,7 +20,7 @@ links:
   project: "tradingagents-fork"
   fr: ["FR-006"]
   adr: ["ADR-0006"]
-  uow: []
+  uow: ["UOW-211"]
   ref:
     - "tradingagents/llm_clients/openai_client.py"
 

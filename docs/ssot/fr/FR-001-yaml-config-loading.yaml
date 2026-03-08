@@ -24,7 +24,7 @@ links:
   project: "tradingagents-fork"
   nfr: ["NFR-001"]
   adr: ["ADR-0004"]
-  uow: []
+  uow: ["UOW-206"]
   ref: ["tradingagents/config_loader.py"]
 
 spec:

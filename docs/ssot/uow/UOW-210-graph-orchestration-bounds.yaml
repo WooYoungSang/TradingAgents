@@ -1,0 +1,134 @@
+schema_version: "2.4.0"
+template_type: "uow"
+
+uow_id: "UOW-210"
+title: "Graph orchestration and bounded execution controls"
+goal: "Preserve staged orchestration behavior with strict recursion/loop bounds."
+
+risk_tier: "R2"
+
+scope:
+  included:
+    - "Verify staged graph traversal contract and empty-analyst guard"
+    - "Verify recursion limit enforcement path"
+  excluded:
+    - "Re-architecting graph stage design"
+
+ssot:
+  pointers:
+    - "docs/ssot/fr/FR-005-graph-orchestration-workflow.yaml"
+    - "docs/ssot/nfr/NFR-005-bounded-execution-controls.yaml"
+    - "docs/ssot/adr/ADR-0005-langgraph-staged-team-orchestration.yaml"
+    - "tradingagents/graph/setup.py"
+    - "tradingagents/graph/propagation.py"
+  invariants:
+    - "Stage order remains deterministic"
+    - "recursion_limit comes from configuration"
+  provenance_policy:
+    require_source_version_trust: true
+
+constraints:
+  - "No unrelated refactors in graph modules"
+  - "No dependency additions"
+
+dod:
+  checklist:
+    - "Empty selected_analysts behavior is deterministic"
+    - "Graph args include recursion_limit"
+  evidence_required:
+    - "artifacts/evidence/<timestamp>-UOW-210/summary.md"
+    - "artifacts/evidence/<timestamp>-UOW-210/verify.log"
+
+verification:
+  ladder_level: 3
+  commands:
+    - "python -m compileall ."
+
+evidence_pack:
+  base_dir: "artifacts/evidence"
+  required_files:
+    - "summary.md"
+    - "verify.log"
+    - "changed_files.txt"
+    - "version.txt"
+  optional_files:
+    - "coverage.txt"
+
+gates:
+  confirm_execution_token: ""
+  require_manual_approval: true
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-005"]
+  nfr: ["NFR-005"]
+  adr: ["ADR-0005"]
+  ref: []
+  depends_on_uow: ["UOW-206"]
+
+spec:
+  description: |
+    Keep graph orchestration behavior stable while ensuring bounded execution controls remain enforceable.
+  requirements:
+    - "setup_graph must reject empty analyst selection deterministically."
+    - "propagation graph args must include config-driven recursion_limit."
+
+  targets:
+    files:
+      create: []
+      modify:
+        - "tradingagents/graph/setup.py"
+        - "tradingagents/graph/propagation.py"
+      delete: []
+
+  tdd:
+    red:
+      tests: []
+    green:
+      impl_files:
+        - "tradingagents/graph/setup.py"
+        - "tradingagents/graph/propagation.py"
+
+  acceptance_refs:
+    - "FR-005:AC-001"
+    - "FR-005:AC-002"
+    - "NFR-005:AC-001"
+
+  evidence:
+    required_types: ["code", "execution"]
+    commands:
+      - "python -m compileall ."
+
+governance:
+  immutability: "mutable"
+  phase: "planned"
+
+notion:
+  enabled: false
+  release_page_url: ""
+  task_page_url: ""
+  allow_status_update: false
+  fields:
+    evidence_pack_link_field: "Evidence Pack Link"
+    status_field: "Status"
+
+closed_loop:
+  enabled: true
+  postmortem_dir: "postmortems"
+  generate_postmortem_on_failure: true
+  propose_dod_update: true
+
+trace:
+  ssot_path: "docs/ssot/uow/UOW-210-graph-orchestration-bounds.yaml"
+  minio_key: "projects/{project}/ssot/uow/UOW-210.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "uow"
+      doc_id: "UOW-210"
+      priority: "p1"
+  embed:
+    include_paths: ["spec.targets", "spec.tdd", "spec.acceptance_refs"]

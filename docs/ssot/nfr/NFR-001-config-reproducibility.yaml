@@ -20,7 +20,7 @@ links:
   project: "tradingagents-fork"
   fr: ["FR-001", "FR-004"]
   adr: ["ADR-0004"]
-  uow: []
+  uow: ["UOW-206", "UOW-207", "UOW-209"]
   ref: ["eval/run_experiment.py"]
 
 spec:

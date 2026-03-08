@@ -1,0 +1,135 @@
+schema_version: "2.4.0"
+template_type: "uow"
+
+uow_id: "UOW-211"
+title: "LLM provider routing compatibility hardening"
+goal: "Maintain provider-routing correctness and endpoint compatibility across OpenAI-compatible servers."
+
+risk_tier: "R2"
+
+scope:
+  included:
+    - "Verify provider-to-client routing contract"
+    - "Verify base_url override and reasoning-model parameter compatibility"
+  excluded:
+    - "Adding new provider families"
+
+ssot:
+  pointers:
+    - "docs/ssot/fr/FR-006-llm-provider-routing.yaml"
+    - "docs/ssot/nfr/NFR-007-provider-compatibility-constraints.yaml"
+    - "docs/ssot/adr/ADR-0006-config-layering-default-yaml-runtime.yaml"
+    - "tradingagents/llm_clients/factory.py"
+    - "tradingagents/llm_clients/openai_client.py"
+  invariants:
+    - "Supported providers map deterministically to client classes"
+    - "OpenAI-compatible base_url override remains effective"
+  provenance_policy:
+    require_source_version_trust: true
+
+constraints:
+  - "No dependency additions"
+  - "No runtime API break in client creation"
+
+dod:
+  checklist:
+    - "Provider mapping behavior remains stable"
+    - "Reasoning-model incompatible params are filtered safely"
+  evidence_required:
+    - "artifacts/evidence/<timestamp>-UOW-211/summary.md"
+    - "artifacts/evidence/<timestamp>-UOW-211/verify.log"
+
+verification:
+  ladder_level: 3
+  commands:
+    - "python -m compileall ."
+
+evidence_pack:
+  base_dir: "artifacts/evidence"
+  required_files:
+    - "summary.md"
+    - "verify.log"
+    - "changed_files.txt"
+    - "version.txt"
+  optional_files:
+    - "coverage.txt"
+
+gates:
+  confirm_execution_token: ""
+  require_manual_approval: true
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-006"]
+  nfr: ["NFR-007"]
+  adr: ["ADR-0006"]
+  ref: []
+  depends_on_uow: ["UOW-206"]
+
+spec:
+  description: |
+    Ensure provider routing and OpenAI-compatible endpoint behavior remain deterministic and backward-compatible.
+  requirements:
+    - "create_llm_client supports documented provider names."
+    - "OpenAI-compatible path accepts base_url overrides."
+    - "Reasoning model path strips unsupported generation params."
+
+  targets:
+    files:
+      create: []
+      modify:
+        - "tradingagents/llm_clients/factory.py"
+        - "tradingagents/llm_clients/openai_client.py"
+      delete: []
+
+  tdd:
+    red:
+      tests: []
+    green:
+      impl_files:
+        - "tradingagents/llm_clients/factory.py"
+        - "tradingagents/llm_clients/openai_client.py"
+
+  acceptance_refs:
+    - "FR-006:AC-001"
+    - "FR-006:AC-002"
+    - "NFR-007:AC-001"
+
+  evidence:
+    required_types: ["code", "execution"]
+    commands:
+      - "python -m compileall ."
+
+governance:
+  immutability: "mutable"
+  phase: "planned"
+
+notion:
+  enabled: false
+  release_page_url: ""
+  task_page_url: ""
+  allow_status_update: false
+  fields:
+    evidence_pack_link_field: "Evidence Pack Link"
+    status_field: "Status"
+
+closed_loop:
+  enabled: true
+  postmortem_dir: "postmortems"
+  generate_postmortem_on_failure: true
+  propose_dod_update: true
+
+trace:
+  ssot_path: "docs/ssot/uow/UOW-211-llm-provider-routing-compatibility.yaml"
+  minio_key: "projects/{project}/ssot/uow/UOW-211.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "uow"
+      doc_id: "UOW-211"
+      priority: "p1"
+  embed:
+    include_paths: ["spec.targets", "spec.tdd", "spec.acceptance_refs"]

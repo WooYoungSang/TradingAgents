@@ -20,7 +20,7 @@ links:
   project: "tradingagents-fork"
   fr: ["FR-007", "FR-008"]
   adr: ["ADR-0007"]
-  uow: []
+  uow: ["UOW-201", "UOW-202", "UOW-203", "UOW-204", "UOW-205", "UOW-212"]
   ref:
     - "tradingagents/default_config.py"
     - "cli/main.py"

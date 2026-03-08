@@ -1,0 +1,133 @@
+schema_version: "2.4.0"
+template_type: "uow"
+
+uow_id: "UOW-209"
+title: "Experiment artifact and metrics consistency"
+goal: "Keep experiment outputs reproducible and metric keys stable across local/cloud configs."
+
+risk_tier: "R1"
+
+scope:
+  included:
+    - "Verify experiment artifact set and summary metrics schema"
+    - "Ensure total_runs-based parse_error_rate contract is preserved"
+  excluded:
+    - "Strategy logic change for signal generation"
+
+ssot:
+  pointers:
+    - "docs/ssot/fr/FR-004-experiment-runner.yaml"
+    - "docs/ssot/nfr/NFR-001-config-reproducibility.yaml"
+    - "docs/ssot/nfr/NFR-004-experiment-metrics-consistency.yaml"
+    - "docs/ssot/adr/ADR-0004-ssot-split-fr-nfr-adr.yaml"
+    - "eval/run_experiment.py"
+  invariants:
+    - "summary.json keys remain stable"
+    - "config_effective.yaml is always emitted"
+  provenance_policy:
+    require_source_version_trust: true
+
+constraints:
+  - "No new dependencies"
+  - "No change to core graph orchestration"
+
+dod:
+  checklist:
+    - "Experiment folder contains required artifacts"
+    - "summary.json includes required metric keys"
+  evidence_required:
+    - "artifacts/evidence/<timestamp>-UOW-209/summary.md"
+    - "artifacts/evidence/<timestamp>-UOW-209/verify.log"
+
+verification:
+  ladder_level: 2
+  commands:
+    - "python -m compileall ."
+
+evidence_pack:
+  base_dir: "artifacts/evidence"
+  required_files:
+    - "summary.md"
+    - "verify.log"
+    - "changed_files.txt"
+    - "version.txt"
+  optional_files:
+    - "coverage.txt"
+
+gates:
+  confirm_execution_token: ""
+  require_manual_approval: false
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-004"]
+  nfr: ["NFR-001", "NFR-004"]
+  adr: ["ADR-0004"]
+  ref: []
+  depends_on_uow: ["UOW-206"]
+
+spec:
+  description: |
+    Preserve reproducible experiment outputs and stable summary metrics for comparative evaluation.
+  requirements:
+    - "config_effective.yaml, runs.jsonl, summary.json are emitted for each experiment."
+    - "summary.json contains parse_error_rate, average_runtime_sec, action_distribution, total_runs."
+    - "action_distribution always includes BUY/SELL/HOLD keys."
+
+  targets:
+    files:
+      create: []
+      modify:
+        - "eval/run_experiment.py"
+      delete: []
+
+  tdd:
+    red:
+      tests: []
+    green:
+      impl_files:
+        - "eval/run_experiment.py"
+
+  acceptance_refs:
+    - "FR-004:AC-001"
+    - "NFR-001:AC-001"
+    - "NFR-004:AC-001"
+
+  evidence:
+    required_types: ["code", "execution"]
+    commands:
+      - "python -m compileall ."
+
+governance:
+  immutability: "mutable"
+  phase: "planned"
+
+notion:
+  enabled: false
+  release_page_url: ""
+  task_page_url: ""
+  allow_status_update: false
+  fields:
+    evidence_pack_link_field: "Evidence Pack Link"
+    status_field: "Status"
+
+closed_loop:
+  enabled: true
+  postmortem_dir: "postmortems"
+  generate_postmortem_on_failure: true
+  propose_dod_update: true
+
+trace:
+  ssot_path: "docs/ssot/uow/UOW-209-experiment-artifact-metrics-consistency.yaml"
+  minio_key: "projects/{project}/ssot/uow/UOW-209.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "uow"
+      doc_id: "UOW-209"
+      priority: "p2"
+  embed:
+    include_paths: ["spec.targets", "spec.tdd", "spec.acceptance_refs"]

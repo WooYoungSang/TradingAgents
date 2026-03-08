@@ -17,7 +17,7 @@ links:
   project: "tradingagents-fork"
   fr: ["FR-003"]
   nfr: ["NFR-002", "NFR-003"]
-  uow: []
+  uow: ["UOW-208"]
   ref:
     - "tradingagents/contracts/trade_plan.py"
     - "tradingagents/output/trade_plan_builder.py"

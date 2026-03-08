@@ -24,7 +24,7 @@ links:
   project: "tradingagents-fork"
   nfr: ["NFR-001"]
   adr: ["ADR-0002"]
-  uow: []
+  uow: ["UOW-207"]
   ref: ["configs/local_4090.yaml", "docs/local_llm.md"]
 
 spec:

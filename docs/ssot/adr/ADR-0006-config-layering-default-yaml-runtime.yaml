@@ -17,7 +17,7 @@ links:
   project: "tradingagents-fork"
   fr: ["FR-001", "FR-006", "FR-008"]
   nfr: ["NFR-007"]
-  uow: []
+  uow: ["UOW-206", "UOW-211", "UOW-212"]
   ref:
     - "tradingagents/default_config.py"
     - "tradingagents/config_loader.py"

@@ -1,0 +1,132 @@
+schema_version: "2.4.0"
+template_type: "uow"
+
+uow_id: "UOW-207"
+title: "Local LLM runtime profile hardening"
+goal: "Ensure RTX 4090 local LLM profile remains runnable by config-only switching."
+
+risk_tier: "R1"
+
+scope:
+  included:
+    - "Verify local_4090 profile and docs are consistent with runtime behavior"
+    - "Validate OpenAI-compatible endpoint usage contract"
+  excluded:
+    - "Adding provider-specific runtime branches"
+
+ssot:
+  pointers:
+    - "docs/ssot/fr/FR-002-local-llm-runtime-profile.yaml"
+    - "docs/ssot/nfr/NFR-001-config-reproducibility.yaml"
+    - "docs/ssot/adr/ADR-0002-local-llm-standard-openai-compatible.yaml"
+    - "configs/local_4090.yaml"
+    - "docs/local_llm.md"
+  invariants:
+    - "Runtime switch remains config-only"
+    - "Non-China-origin model guidance remains explicit"
+  provenance_policy:
+    require_source_version_trust: true
+
+constraints:
+  - "No core trading logic changes"
+  - "No dependency additions"
+
+dod:
+  checklist:
+    - "Profile keys align with runtime config contract"
+    - "Run commands in docs are copy/paste ready"
+  evidence_required:
+    - "artifacts/evidence/<timestamp>-UOW-207/summary.md"
+    - "artifacts/evidence/<timestamp>-UOW-207/verify.log"
+
+verification:
+  ladder_level: 2
+  commands:
+    - "python -m compileall ."
+
+evidence_pack:
+  base_dir: "artifacts/evidence"
+  required_files:
+    - "summary.md"
+    - "verify.log"
+    - "changed_files.txt"
+    - "version.txt"
+  optional_files:
+    - "coverage.txt"
+
+gates:
+  confirm_execution_token: ""
+  require_manual_approval: false
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-002"]
+  nfr: ["NFR-001"]
+  adr: ["ADR-0002"]
+  ref: []
+  depends_on_uow: ["UOW-206"]
+
+spec:
+  description: |
+    Keep local LLM profile operational and deterministic for RTX 4090 workflows.
+  requirements:
+    - "CLI can select local_4090.yaml without editing source code."
+    - "backend_url and model tier keys remain clearly defined."
+
+  targets:
+    files:
+      create: []
+      modify:
+        - "configs/local_4090.yaml"
+        - "docs/local_llm.md"
+      delete: []
+
+  tdd:
+    red:
+      tests: []
+    green:
+      impl_files:
+        - "configs/local_4090.yaml"
+
+  acceptance_refs:
+    - "FR-002:AC-001"
+    - "NFR-001:AC-001"
+
+  evidence:
+    required_types: ["spec_compliance"]
+    commands:
+      - "python -m compileall ."
+
+governance:
+  immutability: "mutable"
+  phase: "planned"
+
+notion:
+  enabled: false
+  release_page_url: ""
+  task_page_url: ""
+  allow_status_update: false
+  fields:
+    evidence_pack_link_field: "Evidence Pack Link"
+    status_field: "Status"
+
+closed_loop:
+  enabled: true
+  postmortem_dir: "postmortems"
+  generate_postmortem_on_failure: true
+  propose_dod_update: true
+
+trace:
+  ssot_path: "docs/ssot/uow/UOW-207-local-llm-runtime-profile-hardening.yaml"
+  minio_key: "projects/{project}/ssot/uow/UOW-207.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "uow"
+      doc_id: "UOW-207"
+      priority: "p2"
+  embed:
+    include_paths: ["spec.targets", "spec.tdd", "spec.acceptance_refs"]

@@ -17,7 +17,7 @@ links:
   project: "tradingagents-fork"
   fr: ["FR-002"]
   nfr: ["NFR-001"]
-  uow: []
+  uow: ["UOW-207"]
   ref: ["docs/local_llm.md", "configs/local_4090.yaml"]
   deprecates: []
 

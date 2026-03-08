@@ -1,0 +1,139 @@
+schema_version: "2.4.0"
+template_type: "uow"
+
+uow_id: "UOW-202"
+title: "Implement Polygon daily stock adapter"
+goal: "Add Polygon get_stock_data adapter that returns CSV-compatible string and typed rate-limit error."
+
+risk_tier: "R2"
+
+scope:
+  included:
+    - "Create Polygon daily dataflow module for get_stock_data"
+    - "Define typed Polygon rate-limit exception for fallback eligibility"
+  excluded:
+    - "Support for Polygon indicators/fundamentals/news"
+    - "Any change to graph orchestration logic"
+
+ssot:
+  pointers:
+    - "docs/ssot/fr/FR-007-data-vendor-routing.yaml"
+    - "docs/ssot/adr/ADR-0007-data-vendor-policy-tool-first-fallback.yaml"
+    - "tradingagents/dataflows/interface.py"
+  invariants:
+    - "get_stock_data output stays CSV-compatible string"
+    - "No behavior change unless polygon vendor is explicitly configured"
+  provenance_policy:
+    require_source_version_trust: true
+
+constraints:
+  - "No new dependencies"
+  - "Do not change public function signatures used by route_to_vendor"
+  - "Error handling must distinguish 429 vs non-429 failures"
+
+dod:
+  checklist:
+    - "Polygon adapter module added and import-safe"
+    - "Adapter returns CSV-compatible string for valid responses"
+    - "Typed rate-limit exception is raised only for retryable 429 conditions"
+  evidence_required:
+    - "artifacts/evidence/<timestamp>-UOW-202/summary.md"
+    - "artifacts/evidence/<timestamp>-UOW-202/verify.log"
+
+verification:
+  ladder_level: 3
+  commands:
+    - "python -m compileall ."
+
+evidence_pack:
+  base_dir: "artifacts/evidence"
+  required_files:
+    - "summary.md"
+    - "verify.log"
+    - "changed_files.txt"
+    - "version.txt"
+  optional_files:
+    - "coverage.txt"
+
+gates:
+  confirm_execution_token: ""
+  require_manual_approval: true
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-007"]
+  nfr: ["NFR-006"]
+  adr: ["ADR-0007"]
+  ref: []
+  depends_on_uow: ["UOW-201"]
+
+spec:
+  description: |
+    Add a focused Polygon adapter for daily OHLCV retrieval only.
+    The adapter must match existing get_stock_data caller expectations and avoid
+    introducing non-string output forms.
+  requirements:
+    - "Adapter callable shape is compatible with route_to_vendor get_stock_data usage."
+    - "Successful response is returned as CSV-compatible string."
+    - "429/rate-limit response raises typed retryable exception."
+    - "Non-429 failures are surfaced without fallback trigger."
+
+  targets:
+    files:
+      create:
+        - "tradingagents/dataflows/polygon_daily.py"
+      modify:
+        - "tradingagents/dataflows/__init__.py"
+      delete: []
+
+  tdd:
+    red:
+      tests:
+        - "tests/unit/test_polygon_daily.py"
+    green:
+      impl_files:
+        - "tradingagents/dataflows/polygon_daily.py"
+
+  acceptance_refs:
+    - "FR-007:AC-001"
+    - "FR-007:AC-002"
+    - "NFR-006:AC-001"
+
+  evidence:
+    required_types: ["code", "test"]
+    commands:
+      - "python -m compileall ."
+
+governance:
+  immutability: "mutable"
+  phase: "planned"
+
+notion:
+  enabled: false
+  release_page_url: ""
+  task_page_url: ""
+  allow_status_update: false
+  fields:
+    evidence_pack_link_field: "Evidence Pack Link"
+    status_field: "Status"
+
+closed_loop:
+  enabled: true
+  postmortem_dir: "postmortems"
+  generate_postmortem_on_failure: true
+  propose_dod_update: true
+
+trace:
+  ssot_path: "docs/ssot/uow/UOW-202-polygon-daily-adapter.yaml"
+  minio_key: "projects/{project}/ssot/uow/UOW-202.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "uow"
+      doc_id: "UOW-202"
+      priority: "p1"
+  embed:
+    include_paths: ["spec.targets", "spec.tdd", "spec.acceptance_refs"]
