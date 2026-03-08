@@ -1,0 +1,142 @@
+schema_version: "2.4.0"
+template_type: "uow"
+
+uow_id: "UOW-201"
+title: "SSOT contract update for Polygon daily routing (canonical path)"
+goal: "Define Polygon daily-stock scope and strict fallback semantics in FR/ADR with testable AC."
+
+risk_tier: "R1"
+
+scope:
+  included:
+    - "Update FR-007 acceptance and contract text for Polygon get_stock_data scope"
+    - "Update ADR-0007 decision/consequence wording to match strict fallback policy"
+  excluded:
+    - "Runtime code changes in dataflow modules"
+    - "Adding Polygon support to indicators/fundamentals/news"
+
+ssot:
+  pointers:
+    - "docs/ssot/fr/FR-007-data-vendor-routing.yaml"
+    - "docs/ssot/adr/ADR-0007-data-vendor-policy-tool-first-fallback.yaml"
+    - "docs/ssot/nfr/NFR-006-data-artifact-path-stability.yaml"
+  invariants:
+    - "No default vendor change for existing users"
+    - "Fallback remains deterministic and typed"
+  provenance_policy:
+    require_source_version_trust: true
+
+constraints:
+  - "No new dependencies"
+  - "Do not modify runtime Python imports"
+  - "If FR-007 contract/acceptance changes, bump FR-007 version"
+
+dod:
+  checklist:
+    - "FR-007 includes explicit Polygon scope for get_stock_data only"
+    - "FR-007 includes strict fallback trigger definition"
+    - "ADR-0007 and FR-007 are semantically aligned"
+    - "Behavioral runtime verification for fallback-chain execution is deferred to UOW-203 scope"
+  evidence_required:
+    - "artifacts/evidence/<timestamp>-UOW-201/summary.md"
+    - "artifacts/evidence/<timestamp>-UOW-201/verify.log"
+
+verification:
+  ladder_level: 2
+  commands:
+    - "python -m compileall ."
+
+evidence_pack:
+  base_dir: "artifacts/evidence"
+  required_files:
+    - "summary.md"
+    - "verify.log"
+    - "changed_files.txt"
+    - "version.txt"
+  optional_files:
+    - "coverage.txt"
+
+gates:
+  confirm_execution_token: ""
+  require_manual_approval: false
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-007"]
+  nfr: ["NFR-006"]
+  adr: ["ADR-0007"]
+  ref: []
+  depends_on_uow: []
+
+spec:
+  description: |
+    Align SSOT for Polygon daily stock vendor integration without broadening scope.
+    This UoW must define: (1) Polygon support is phase-limited to get_stock_data,
+    (2) fallback is triggered only by typed rate-limit errors, and
+    (3) get_stock_data output contract remains CSV-compatible string.
+  requirements:
+    - "FR-007 text explicitly scopes Polygon support to get_stock_data only."
+    - "FR-007 acceptance defines typed fallback trigger semantics."
+    - "ADR-0007 decision wording matches FR-007 fallback and output contract."
+
+  targets:
+    files:
+      create: []
+      modify:
+        - "docs/ssot/fr/FR-007-data-vendor-routing.yaml"
+        - "docs/ssot/adr/ADR-0007-data-vendor-policy-tool-first-fallback.yaml"
+      delete: []
+
+  tdd:
+    red:
+      tests: []
+    green:
+      impl_files:
+        - "docs/ssot/fr/FR-007-data-vendor-routing.yaml"
+        - "docs/ssot/adr/ADR-0007-data-vendor-policy-tool-first-fallback.yaml"
+
+  acceptance_refs:
+    - "FR-007:AC-001"
+    - "FR-007:AC-002"
+    - "FR-007:AC-003"
+    - "FR-007:AC-004"
+    - "NFR-006:AC-001"
+
+  evidence:
+    required_types: ["spec_compliance"]
+    commands:
+      - "python -m compileall ."
+
+governance:
+  immutability: "mutable"
+  phase: "planned"
+
+notion:
+  enabled: false
+  release_page_url: ""
+  task_page_url: ""
+  allow_status_update: false
+  fields:
+    evidence_pack_link_field: "Evidence Pack Link"
+    status_field: "Status"
+
+closed_loop:
+  enabled: true
+  postmortem_dir: "postmortems"
+  generate_postmortem_on_failure: true
+  propose_dod_update: true
+
+trace:
+  ssot_path: "docs/ssot/uow/UOW-201.yaml"
+  minio_key: "projects/{project}/ssot/uow/UOW-201.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "uow"
+      doc_id: "UOW-201"
+      priority: "p1"
+  embed:
+    include_paths: ["spec.targets", "spec.tdd", "spec.acceptance_refs"]

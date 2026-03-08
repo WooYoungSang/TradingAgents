@@ -1,0 +1,133 @@
+schema_version: "2.4.0"
+template_type: "uow"
+
+uow_id: "UOW-206"
+title: "Config layering contract verification"
+goal: "Harden and verify DEFAULT+YAML config layering behavior remains backward compatible."
+
+risk_tier: "R1"
+
+scope:
+  included:
+    - "Verify load_config path=None behavior and deep-merge contract"
+    - "Verify reproducible effective config artifact generation contract"
+  excluded:
+    - "Replacing DEFAULT_CONFIG with YAML-only approach"
+
+ssot:
+  pointers:
+    - "docs/ssot/fr/FR-001-yaml-config-loading.yaml"
+    - "docs/ssot/nfr/NFR-001-config-reproducibility.yaml"
+    - "docs/ssot/adr/ADR-0006-config-layering-default-yaml-runtime.yaml"
+    - "tradingagents/config_loader.py"
+  invariants:
+    - "path=None preserves base config behavior"
+    - "Nested dicts are deep-merged deterministically"
+  provenance_policy:
+    require_source_version_trust: true
+
+constraints:
+  - "No new dependencies"
+  - "No breaking change to DEFAULT_CONFIG.copy() callers"
+
+dod:
+  checklist:
+    - "Config layering behavior is explicitly verified against FR/NFR AC"
+    - "No runtime import path changes"
+  evidence_required:
+    - "artifacts/evidence/<timestamp>-UOW-206/summary.md"
+    - "artifacts/evidence/<timestamp>-UOW-206/verify.log"
+
+verification:
+  ladder_level: 2
+  commands:
+    - "python -m compileall ."
+
+evidence_pack:
+  base_dir: "artifacts/evidence"
+  required_files:
+    - "summary.md"
+    - "verify.log"
+    - "changed_files.txt"
+    - "version.txt"
+  optional_files:
+    - "coverage.txt"
+
+gates:
+  confirm_execution_token: ""
+  require_manual_approval: false
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-001"]
+  nfr: ["NFR-001"]
+  adr: ["ADR-0006"]
+  ref: []
+  depends_on_uow: []
+
+spec:
+  description: |
+    Validate and maintain the config layering contract: DEFAULT baseline + optional YAML + runtime selections.
+  requirements:
+    - "When config path is null, base config must remain unchanged."
+    - "Nested keys such as data_vendors/tool_vendors are deep-merged."
+    - "Effective config artifact remains reproducible."
+
+  targets:
+    files:
+      create: []
+      modify:
+        - "tradingagents/config_loader.py"
+        - "configs/README.md"
+      delete: []
+
+  tdd:
+    red:
+      tests: []
+    green:
+      impl_files:
+        - "tradingagents/config_loader.py"
+
+  acceptance_refs:
+    - "FR-001:AC-001"
+    - "FR-001:AC-002"
+    - "NFR-001:AC-001"
+
+  evidence:
+    required_types: ["code", "spec_compliance"]
+    commands:
+      - "python -m compileall ."
+
+governance:
+  immutability: "mutable"
+  phase: "planned"
+
+notion:
+  enabled: false
+  release_page_url: ""
+  task_page_url: ""
+  allow_status_update: false
+  fields:
+    evidence_pack_link_field: "Evidence Pack Link"
+    status_field: "Status"
+
+closed_loop:
+  enabled: true
+  postmortem_dir: "postmortems"
+  generate_postmortem_on_failure: true
+  propose_dod_update: true
+
+trace:
+  ssot_path: "docs/ssot/uow/UOW-206-config-layer-contract-verification.yaml"
+  minio_key: "projects/{project}/ssot/uow/UOW-206.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "uow"
+      doc_id: "UOW-206"
+      priority: "p1"
+  embed:
+    include_paths: ["spec.targets", "spec.tdd", "spec.acceptance_refs"]
