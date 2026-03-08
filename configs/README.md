@@ -6,6 +6,13 @@ Current state:
 - Runtime baseline remains `tradingagents/default_config.py` (`DEFAULT_CONFIG`).
 - YAML overrides are loaded by `tradingagents/config_loader.py`.
 
+Layering contract:
+- Merge order is `DEFAULT_CONFIG` -> YAML override -> runtime/session selections.
+- `load_config(path=None, base=...)` preserves the baseline config and returns an isolated copy.
+- Nested mapping keys (for example `data_vendors` and `tool_vendors`) are deep-merged.
+- YAML overrides must keep a mapping/object at the document root.
+- Empty or `null` YAML documents are treated as an empty mapping; other non-mapping roots are rejected.
+- Experiment runs persist the merged result as `config_effective.yaml` for reproducibility.
 Naming conventions:
 - `local_4090.yaml`: local development and 24GB VRAM profile.
 - `cloud_eval.yaml`: cloud or CI-style evaluation profile.
