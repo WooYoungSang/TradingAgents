@@ -17,7 +17,7 @@ links:
   project: "tradingagents-fork"
   fr: ["FR-005", "FR-008"]
   nfr: ["NFR-005", "NFR-008"]
-  uow: []
+  uow: ["UOW-210", "UOW-212"]
   ref:
     - "tradingagents/graph/setup.py"
     - "tradingagents/graph/conditional_logic.py"

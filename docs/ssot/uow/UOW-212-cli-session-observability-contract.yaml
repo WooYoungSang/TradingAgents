@@ -1,0 +1,134 @@
+schema_version: "2.4.0"
+template_type: "uow"
+
+uow_id: "UOW-212"
+title: "CLI session observability and artifact contract"
+goal: "Keep CLI analysis-session config UX and observability artifacts stable and testable."
+
+risk_tier: "R1"
+
+scope:
+  included:
+    - "Verify CLI --config and --print-effective-config behavior"
+    - "Verify message/tool log and report artifact persistence"
+  excluded:
+    - "UI redesign of CLI screens"
+
+ssot:
+  pointers:
+    - "docs/ssot/fr/FR-008-cli-analysis-session.yaml"
+    - "docs/ssot/nfr/NFR-008-cli-session-observability.yaml"
+    - "docs/ssot/nfr/NFR-006-data-artifact-path-stability.yaml"
+    - "docs/ssot/adr/ADR-0005-langgraph-staged-team-orchestration.yaml"
+    - "docs/ssot/adr/ADR-0006-config-layering-default-yaml-runtime.yaml"
+    - "cli/main.py"
+  invariants:
+    - "CLI config options remain backward compatible"
+    - "Session observability files remain persisted during runs"
+  provenance_policy:
+    require_source_version_trust: true
+
+constraints:
+  - "No new dependencies"
+  - "Do not change core analysis pipeline output semantics"
+
+dod:
+  checklist:
+    - "CLI supports config loading and effective-config print path"
+    - "Per-session observability artifacts are present under contract paths"
+  evidence_required:
+    - "artifacts/evidence/<timestamp>-UOW-212/summary.md"
+    - "artifacts/evidence/<timestamp>-UOW-212/verify.log"
+
+verification:
+  ladder_level: 2
+  commands:
+    - "python -m compileall ."
+
+evidence_pack:
+  base_dir: "artifacts/evidence"
+  required_files:
+    - "summary.md"
+    - "verify.log"
+    - "changed_files.txt"
+    - "version.txt"
+  optional_files:
+    - "coverage.txt"
+
+gates:
+  confirm_execution_token: ""
+  require_manual_approval: false
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-008"]
+  nfr: ["NFR-006", "NFR-008"]
+  adr: ["ADR-0005", "ADR-0006"]
+  ref: []
+  depends_on_uow: ["UOW-206"]
+
+spec:
+  description: |
+    Preserve CLI runtime UX and observability contracts for debugging and reproducibility.
+  requirements:
+    - "CLI accepts --config and --print-effective-config options."
+    - "Run artifacts include message/tool events and report files under stable paths."
+
+  targets:
+    files:
+      create: []
+      modify:
+        - "cli/main.py"
+      delete: []
+
+  tdd:
+    red:
+      tests: []
+    green:
+      impl_files:
+        - "cli/main.py"
+
+  acceptance_refs:
+    - "FR-008:AC-001"
+    - "FR-008:AC-002"
+    - "NFR-006:AC-001"
+    - "NFR-008:AC-001"
+
+  evidence:
+    required_types: ["code", "execution"]
+    commands:
+      - "python -m compileall ."
+
+governance:
+  immutability: "mutable"
+  phase: "planned"
+
+notion:
+  enabled: false
+  release_page_url: ""
+  task_page_url: ""
+  allow_status_update: false
+  fields:
+    evidence_pack_link_field: "Evidence Pack Link"
+    status_field: "Status"
+
+closed_loop:
+  enabled: true
+  postmortem_dir: "postmortems"
+  generate_postmortem_on_failure: true
+  propose_dod_update: true
+
+trace:
+  ssot_path: "docs/ssot/uow/UOW-212-cli-session-observability-contract.yaml"
+  minio_key: "projects/{project}/ssot/uow/UOW-212.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "uow"
+      doc_id: "UOW-212"
+      priority: "p2"
+  embed:
+    include_paths: ["spec.targets", "spec.tdd", "spec.acceptance_refs"]

@@ -17,7 +17,7 @@ links:
   project: "tradingagents-fork"
   fr: ["FR-001", "FR-002", "FR-003", "FR-004"]
   nfr: ["NFR-001", "NFR-002", "NFR-003", "NFR-004"]
-  uow: []
+  uow: ["UOW-209"]
   ref: ["docs/SSOT.md"]
   deprecates: []
 

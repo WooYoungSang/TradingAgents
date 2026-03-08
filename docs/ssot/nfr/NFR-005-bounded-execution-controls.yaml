@@ -20,7 +20,7 @@ links:
   project: "tradingagents-fork"
   fr: ["FR-005"]
   adr: ["ADR-0005"]
-  uow: []
+  uow: ["UOW-210"]
   ref:
     - "tradingagents/graph/conditional_logic.py"
     - "tradingagents/graph/propagation.py"

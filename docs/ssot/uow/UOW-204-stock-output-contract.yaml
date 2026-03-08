@@ -1,0 +1,140 @@
+schema_version: "2.4.0"
+template_type: "uow"
+
+uow_id: "UOW-204"
+title: "Enforce stock data output contract as CSV string"
+goal: "Guarantee get_stock_data consumer paths receive CSV-compatible string across vendors."
+
+risk_tier: "R1"
+
+scope:
+  included:
+    - "Normalize get_stock_data output contract across yfinance/alpha_vantage/polygon"
+    - "Align core_stock_tools expectations with CSV-string contract"
+  excluded:
+    - "Refactoring analyst prompts unrelated to stock data ingestion"
+    - "Changing downstream decision logic"
+
+ssot:
+  pointers:
+    - "docs/ssot/fr/FR-007-data-vendor-routing.yaml"
+    - "docs/ssot/nfr/NFR-006-data-artifact-path-stability.yaml"
+    - "tradingagents/agents/utils/core_stock_tools.py"
+  invariants:
+    - "Output type remains string-compatible for existing prompts"
+    - "No path contract changes"
+  provenance_policy:
+    require_source_version_trust: true
+
+constraints:
+  - "No new dependencies"
+  - "Avoid unrelated prompt/content rewrites"
+  - "Keep function signatures backwards-compatible"
+
+dod:
+  checklist:
+    - "core_stock_tools reads stock payload as CSV string for all configured vendors"
+    - "Contract is documented in code comments/docstrings in English"
+    - "compileall passes"
+  evidence_required:
+    - "artifacts/evidence/<timestamp>-UOW-204/summary.md"
+    - "artifacts/evidence/<timestamp>-UOW-204/verify.log"
+
+verification:
+  ladder_level: 2
+  commands:
+    - "python -m compileall ."
+
+evidence_pack:
+  base_dir: "artifacts/evidence"
+  required_files:
+    - "summary.md"
+    - "verify.log"
+    - "changed_files.txt"
+    - "version.txt"
+  optional_files:
+    - "coverage.txt"
+
+gates:
+  confirm_execution_token: ""
+  require_manual_approval: false
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-007"]
+  nfr: ["NFR-006"]
+  adr: ["ADR-0007"]
+  ref: []
+  depends_on_uow: ["UOW-202", "UOW-203"]
+
+spec:
+  description: |
+    Keep output compatibility stable by enforcing CSV-string return contract for
+    get_stock_data paths and consumers.
+  requirements:
+    - "Vendor implementations return or normalize to CSV-compatible string."
+    - "core_stock_tools consumer path accepts uniform string payload across vendors."
+    - "No change in downstream prompt entrypoints or decision pipeline shape."
+
+  targets:
+    files:
+      create: []
+      modify:
+        - "tradingagents/agents/utils/core_stock_tools.py"
+        - "tradingagents/dataflows/y_finance.py"
+        - "tradingagents/dataflows/alpha_vantage_stock.py"
+        - "tradingagents/dataflows/polygon_daily.py"
+      delete: []
+
+  tdd:
+    red:
+      tests:
+        - "tests/unit/test_stock_data_output_contract.py"
+    green:
+      impl_files:
+        - "tradingagents/agents/utils/core_stock_tools.py"
+        - "tradingagents/dataflows/polygon_daily.py"
+
+  acceptance_refs:
+    - "FR-007:AC-001"
+    - "FR-007:AC-002"
+    - "NFR-006:AC-001"
+
+  evidence:
+    required_types: ["code", "test"]
+    commands:
+      - "python -m compileall ."
+
+governance:
+  immutability: "mutable"
+  phase: "planned"
+
+notion:
+  enabled: false
+  release_page_url: ""
+  task_page_url: ""
+  allow_status_update: false
+  fields:
+    evidence_pack_link_field: "Evidence Pack Link"
+    status_field: "Status"
+
+closed_loop:
+  enabled: true
+  postmortem_dir: "postmortems"
+  generate_postmortem_on_failure: true
+  propose_dod_update: true
+
+trace:
+  ssot_path: "docs/ssot/uow/UOW-204-stock-output-contract.yaml"
+  minio_key: "projects/{project}/ssot/uow/UOW-204.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "uow"
+      doc_id: "UOW-204"
+      priority: "p2"
+  embed:
+    include_paths: ["spec.targets", "spec.tdd", "spec.acceptance_refs"]

@@ -24,7 +24,7 @@ links:
   project: "tradingagents-fork"
   nfr: ["NFR-006", "NFR-008"]
   adr: ["ADR-0005", "ADR-0006"]
-  uow: []
+  uow: ["UOW-212"]
   ref:
     - "cli/main.py"
 

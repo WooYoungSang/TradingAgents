@@ -1,0 +1,139 @@
+schema_version: "2.4.0"
+template_type: "uow"
+
+uow_id: "UOW-208"
+title: "TradePlan output reliability hardening"
+goal: "Guarantee structured TradePlan output and legacy decision coexist with deterministic parse-error surfacing."
+
+risk_tier: "R2"
+
+scope:
+  included:
+    - "Verify TradePlan.v1 emission path and log inclusion"
+    - "Harden parse-failure diagnostics and deterministic failure surface"
+  excluded:
+    - "Changing decision semantics of BUY/SELL/HOLD extraction"
+
+ssot:
+  pointers:
+    - "docs/ssot/fr/FR-003-tradeplan-v1-output.yaml"
+    - "docs/ssot/nfr/NFR-002-tradeplan-parse-error-handling.yaml"
+    - "docs/ssot/nfr/NFR-003-log-contract-stability.yaml"
+    - "docs/ssot/adr/ADR-0003-structured-output-tradeplan-v1.yaml"
+    - "tradingagents/output/trade_plan_builder.py"
+    - "tradingagents/graph/trading_graph.py"
+  invariants:
+    - "Legacy decision string remains available"
+    - "trade_plan is included in successful log payloads"
+  provenance_policy:
+    require_source_version_trust: true
+
+constraints:
+  - "No new dependencies"
+  - "Keep backward compatibility with existing run outputs"
+
+dod:
+  checklist:
+    - "Successful runs expose decision + trade_plan together"
+    - "Retry-exhausted parse failures surface as explicit failure"
+    - "Log payload contains both final_trade_decision and trade_plan"
+  evidence_required:
+    - "artifacts/evidence/<timestamp>-UOW-208/summary.md"
+    - "artifacts/evidence/<timestamp>-UOW-208/verify.log"
+
+verification:
+  ladder_level: 3
+  commands:
+    - "python -m compileall ."
+
+evidence_pack:
+  base_dir: "artifacts/evidence"
+  required_files:
+    - "summary.md"
+    - "verify.log"
+    - "changed_files.txt"
+    - "version.txt"
+  optional_files:
+    - "coverage.txt"
+
+gates:
+  confirm_execution_token: ""
+  require_manual_approval: true
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-003"]
+  nfr: ["NFR-002", "NFR-003"]
+  adr: ["ADR-0003"]
+  ref: []
+  depends_on_uow: ["UOW-206"]
+
+spec:
+  description: |
+    Stabilize TradePlan.v1 structured output behavior and error handling for downstream reliability.
+  requirements:
+    - "final_state must include trade_plan on successful propagate runs."
+    - "_log_state output must include final_trade_decision and trade_plan fields."
+    - "Retry exhaustion must raise TRADEPLAN_PARSE_FAILED with diagnostics."
+
+  targets:
+    files:
+      create: []
+      modify:
+        - "tradingagents/output/trade_plan_builder.py"
+        - "tradingagents/graph/trading_graph.py"
+      delete: []
+
+  tdd:
+    red:
+      tests: []
+    green:
+      impl_files:
+        - "tradingagents/output/trade_plan_builder.py"
+        - "tradingagents/graph/trading_graph.py"
+
+  acceptance_refs:
+    - "FR-003:AC-001"
+    - "FR-003:AC-002"
+    - "FR-003:AC-003"
+    - "NFR-002:AC-001"
+    - "NFR-003:AC-001"
+
+  evidence:
+    required_types: ["code", "execution"]
+    commands:
+      - "python -m compileall ."
+
+governance:
+  immutability: "mutable"
+  phase: "planned"
+
+notion:
+  enabled: false
+  release_page_url: ""
+  task_page_url: ""
+  allow_status_update: false
+  fields:
+    evidence_pack_link_field: "Evidence Pack Link"
+    status_field: "Status"
+
+closed_loop:
+  enabled: true
+  postmortem_dir: "postmortems"
+  generate_postmortem_on_failure: true
+  propose_dod_update: true
+
+trace:
+  ssot_path: "docs/ssot/uow/UOW-208-tradeplan-output-reliability-hardening.yaml"
+  minio_key: "projects/{project}/ssot/uow/UOW-208.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "uow"
+      doc_id: "UOW-208"
+      priority: "p1"
+  embed:
+    include_paths: ["spec.targets", "spec.tdd", "spec.acceptance_refs"]

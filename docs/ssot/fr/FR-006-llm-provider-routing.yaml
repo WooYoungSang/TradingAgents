@@ -24,7 +24,7 @@ links:
   project: "tradingagents-fork"
   nfr: ["NFR-007"]
   adr: ["ADR-0006"]
-  uow: []
+  uow: ["UOW-211"]
   ref:
     - "tradingagents/llm_clients/factory.py"
     - "tradingagents/llm_clients/openai_client.py"

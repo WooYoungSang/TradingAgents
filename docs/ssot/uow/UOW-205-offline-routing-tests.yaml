@@ -1,0 +1,142 @@
+schema_version: "2.4.0"
+template_type: "uow"
+
+uow_id: "UOW-205"
+title: "Add deterministic offline tests for vendor routing and output contract"
+goal: "Provide network-independent unittest coverage for precedence, fallback, and CSV output contract."
+
+risk_tier: "R1"
+
+scope:
+  included:
+    - "Create unittest-based routing tests with monkeypatch/mocks"
+    - "Validate fallback only for typed rate-limit exceptions"
+    - "Validate CSV-string output contract"
+  excluded:
+    - "Live external API integration tests"
+    - "Benchmark/performance test expansion"
+
+ssot:
+  pointers:
+    - "docs/ssot/fr/FR-007-data-vendor-routing.yaml"
+    - "docs/ssot/nfr/NFR-006-data-artifact-path-stability.yaml"
+    - "tradingagents/dataflows/interface.py"
+  invariants:
+    - "Tests must run without external API keys"
+    - "Tests must be deterministic and isolated"
+  provenance_policy:
+    require_source_version_trust: true
+
+constraints:
+  - "No new dependencies"
+  - "Use python -m unittest as baseline test runner"
+  - "No network call in unit tests"
+
+dod:
+  checklist:
+    - "Routing precedence tests exist"
+    - "Typed rate-limit fallback tests exist"
+    - "CSV output contract tests exist"
+  evidence_required:
+    - "artifacts/evidence/<timestamp>-UOW-205/summary.md"
+    - "artifacts/evidence/<timestamp>-UOW-205/verify.log"
+
+verification:
+  ladder_level: 2
+  commands:
+    - "python -m compileall ."
+    - "python -m unittest discover -s tests -p 'test_*.py'"
+
+evidence_pack:
+  base_dir: "artifacts/evidence"
+  required_files:
+    - "summary.md"
+    - "verify.log"
+    - "changed_files.txt"
+    - "version.txt"
+  optional_files:
+    - "coverage.txt"
+
+gates:
+  confirm_execution_token: ""
+  require_manual_approval: false
+
+links:
+  project: "tradingagents-fork"
+  fr: ["FR-007"]
+  nfr: ["NFR-006"]
+  adr: ["ADR-0007"]
+  ref: []
+  depends_on_uow: ["UOW-203", "UOW-204"]
+
+spec:
+  description: |
+    Add deterministic unit tests for data vendor routing and stock output contract.
+    Tests must stub vendor functions and never require live network/API credentials.
+  requirements:
+    - "Tests run fully offline using mocks/stubs."
+    - "Test matrix covers precedence, ordered routing, and typed fallback behavior."
+    - "Test matrix verifies CSV-string output contract for get_stock_data."
+
+  targets:
+    files:
+      create:
+        - "tests/unit/test_data_vendor_routing.py"
+        - "tests/unit/test_stock_data_output_contract.py"
+      modify: []
+      delete: []
+
+  tdd:
+    red:
+      tests:
+        - "tests/unit/test_data_vendor_routing.py"
+        - "tests/unit/test_stock_data_output_contract.py"
+    green:
+      impl_files:
+        - "tradingagents/dataflows/interface.py"
+        - "tradingagents/agents/utils/core_stock_tools.py"
+
+  acceptance_refs:
+    - "FR-007:AC-001"
+    - "FR-007:AC-002"
+    - "NFR-006:AC-001"
+
+  evidence:
+    required_types: ["test", "execution"]
+    commands:
+      - "python -m compileall ."
+      - "python -m unittest discover -s tests -p 'test_*.py'"
+
+governance:
+  immutability: "mutable"
+  phase: "planned"
+
+notion:
+  enabled: false
+  release_page_url: ""
+  task_page_url: ""
+  allow_status_update: false
+  fields:
+    evidence_pack_link_field: "Evidence Pack Link"
+    status_field: "Status"
+
+closed_loop:
+  enabled: true
+  postmortem_dir: "postmortems"
+  generate_postmortem_on_failure: true
+  propose_dod_update: true
+
+trace:
+  ssot_path: "docs/ssot/uow/UOW-205-offline-routing-tests.yaml"
+  minio_key: "projects/{project}/ssot/uow/UOW-205.json"
+  index_status: "pending"
+
+indexing:
+  qdrant:
+    payload:
+      project_id: "tradingagents-fork"
+      doc_type: "uow"
+      doc_id: "UOW-205"
+      priority: "p1"
+  embed:
+    include_paths: ["spec.targets", "spec.tdd", "spec.acceptance_refs"]
