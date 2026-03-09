@@ -1,15 +1,18 @@
-from typing import Annotated
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-import yfinance as yf
 import os
+from datetime import datetime
+from typing import Annotated
+
+import yfinance as yf  # type: ignore[import-untyped]
+from dateutil.relativedelta import relativedelta  # type: ignore[import-untyped]
+
 from .stockstats_utils import StockstatsUtils
 
 def get_YFin_data_online(
     symbol: Annotated[str, "ticker symbol of the company"],
     start_date: Annotated[str, "Start date in yyyy-mm-dd format"],
     end_date: Annotated[str, "End date in yyyy-mm-dd format"],
-):
+) -> str:
+    """Return Yahoo Finance OHLCV data as a plain CSV string."""
 
     datetime.strptime(start_date, "%Y-%m-%d")
     datetime.strptime(end_date, "%Y-%m-%d")
@@ -36,15 +39,9 @@ def get_YFin_data_online(
         if col in data.columns:
             data[col] = data[col].round(2)
 
-    # Convert DataFrame to CSV string
-    csv_string = data.to_csv()
-
-    # Add header information
-    header = f"# Stock data for {symbol.upper()} from {start_date} to {end_date}\n"
-    header += f"# Total records: {len(data)}\n"
-    header += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-
-    return header + csv_string
+    # Preserve a plain CSV payload so downstream consumers see the same contract
+    # regardless of the selected stock data vendor.
+    return data.to_csv()
 
 def get_stock_stats_indicators_window(
     symbol: Annotated[str, "ticker symbol of the company"],
@@ -195,9 +192,9 @@ def _get_stock_stats_bulk(
     Returns dict mapping date strings to indicator values.
     """
     from .config import get_config
+
     import pandas as pd
     from stockstats import wrap
-    import os
     
     config = get_config()
     online = config["data_vendors"]["technical_indicators"] != "local"
@@ -217,7 +214,6 @@ def _get_stock_stats_bulk(
     else:
         # Online data fetching with caching
         today_date = pd.Timestamp.today()
-        curr_date_dt = pd.to_datetime(curr_date)
         
         end_date = today_date
         start_date = today_date - pd.DateOffset(years=15)
@@ -295,8 +291,8 @@ def get_stockstats_indicator(
 
 def get_fundamentals(
     ticker: Annotated[str, "ticker symbol of the company"],
-    curr_date: Annotated[str, "current date (not used for yfinance)"] = None
-):
+    curr_date: Annotated[str | None, "current date (not used for yfinance)"] = None
+) -> str:
     """Get company fundamentals overview from yfinance."""
     try:
         ticker_obj = yf.Ticker(ticker.upper())
@@ -353,8 +349,8 @@ def get_fundamentals(
 def get_balance_sheet(
     ticker: Annotated[str, "ticker symbol of the company"],
     freq: Annotated[str, "frequency of data: 'annual' or 'quarterly'"] = "quarterly",
-    curr_date: Annotated[str, "current date (not used for yfinance)"] = None
-):
+    curr_date: Annotated[str | None, "current date (not used for yfinance)"] = None
+) -> str:
     """Get balance sheet data from yfinance."""
     try:
         ticker_obj = yf.Ticker(ticker.upper())
@@ -383,8 +379,8 @@ def get_balance_sheet(
 def get_cashflow(
     ticker: Annotated[str, "ticker symbol of the company"],
     freq: Annotated[str, "frequency of data: 'annual' or 'quarterly'"] = "quarterly",
-    curr_date: Annotated[str, "current date (not used for yfinance)"] = None
-):
+    curr_date: Annotated[str | None, "current date (not used for yfinance)"] = None
+) -> str:
     """Get cash flow data from yfinance."""
     try:
         ticker_obj = yf.Ticker(ticker.upper())
@@ -413,8 +409,8 @@ def get_cashflow(
 def get_income_statement(
     ticker: Annotated[str, "ticker symbol of the company"],
     freq: Annotated[str, "frequency of data: 'annual' or 'quarterly'"] = "quarterly",
-    curr_date: Annotated[str, "current date (not used for yfinance)"] = None
-):
+    curr_date: Annotated[str | None, "current date (not used for yfinance)"] = None
+) -> str:
     """Get income statement data from yfinance."""
     try:
         ticker_obj = yf.Ticker(ticker.upper())
