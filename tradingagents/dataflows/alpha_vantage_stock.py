@@ -16,7 +16,8 @@ def get_stock(
         end_date: End date in yyyy-mm-dd format
 
     Returns:
-        CSV string containing the daily adjusted time series data filtered to the date range.
+        CSV string containing the daily adjusted time series data filtered to the
+        date range, matching the shared get_stock_data contract.
     """
     # Parse dates to determine the range
     start_dt = datetime.strptime(start_date, "%Y-%m-%d")
@@ -35,4 +36,4 @@ def get_stock(
 
     response = _make_api_request("TIME_SERIES_DAILY_ADJUSTED", params)
 
-    return _filter_csv_by_date_range(response, start_date, end_date)
+    return str(_filter_csv_by_date_range(response, start_date, end_date))
