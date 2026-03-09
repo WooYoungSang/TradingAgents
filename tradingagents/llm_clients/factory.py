@@ -5,6 +5,8 @@ from .openai_client import OpenAIClient
 from .anthropic_client import AnthropicClient
 from .google_client import GoogleClient
 
+OPENAI_COMPATIBLE_PROVIDERS = frozenset(("openai", "ollama", "openrouter", "xai"))
+
 
 def create_llm_client(
     provider: str,
@@ -28,11 +30,8 @@ def create_llm_client(
     """
     provider_lower = provider.lower()
 
-    if provider_lower in ("openai", "ollama", "openrouter"):
+    if provider_lower in OPENAI_COMPATIBLE_PROVIDERS:
         return OpenAIClient(model, base_url, provider=provider_lower, **kwargs)
-
-    if provider_lower == "xai":
-        return OpenAIClient(model, base_url, provider="xai", **kwargs)
 
     if provider_lower == "anthropic":
         return AnthropicClient(model, base_url, **kwargs)

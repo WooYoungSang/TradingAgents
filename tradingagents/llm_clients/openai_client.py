@@ -44,22 +44,25 @@ class OpenAIClient(BaseLLMClient):
     def get_llm(self) -> Any:
         """Return configured ChatOpenAI instance."""
         llm_kwargs = {"model": self.model}
+        default_base_url: Optional[str] = None
+        default_api_key: Optional[str] = None
 
         if self.provider == "xai":
-            llm_kwargs["base_url"] = "https://api.x.ai/v1"
-            api_key = os.environ.get("XAI_API_KEY")
-            if api_key:
-                llm_kwargs["api_key"] = api_key
+            default_base_url = "https://api.x.ai/v1"
+            default_api_key = os.environ.get("XAI_API_KEY")
         elif self.provider == "openrouter":
-            llm_kwargs["base_url"] = "https://openrouter.ai/api/v1"
-            api_key = os.environ.get("OPENROUTER_API_KEY")
-            if api_key:
-                llm_kwargs["api_key"] = api_key
+            default_base_url = "https://openrouter.ai/api/v1"
+            default_api_key = os.environ.get("OPENROUTER_API_KEY")
         elif self.provider == "ollama":
-            llm_kwargs["base_url"] = "http://localhost:11434/v1"
-            llm_kwargs["api_key"] = "ollama"  # Ollama doesn't require auth
-        elif self.base_url:
-            llm_kwargs["base_url"] = self.base_url
+            default_base_url = "http://localhost:11434/v1"
+            default_api_key = "ollama"  # Ollama doesn't require auth
+
+        resolved_base_url = self.base_url or default_base_url
+        if resolved_base_url:
+            llm_kwargs["base_url"] = resolved_base_url
+
+        if default_api_key and "api_key" not in self.kwargs:
+            llm_kwargs["api_key"] = default_api_key
 
         for key in ("timeout", "max_retries", "reasoning_effort", "api_key", "callbacks"):
             if key in self.kwargs:
