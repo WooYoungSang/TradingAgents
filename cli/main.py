@@ -27,7 +27,6 @@ from rich.rule import Rule
 from tradingagents.default_config import DEFAULT_CONFIG
 from tradingagents.config_loader import load_config
 from cli.models import AnalystType
-from cli.utils import *
 from cli.announcements import fetch_announcements, display_announcements
 from cli.stats_handler import StatsCallbackHandler
 
@@ -905,6 +904,15 @@ def resolve_base_config(config_path: Optional[Path]) -> dict:
 
 
 def run_analysis(base_config: Optional[dict] = None):
+    from cli.utils import (
+        ANALYST_ORDER,
+        classify_message_type,
+        display_complete_report,
+        get_user_selections,
+        save_report_to_disk,
+        update_analyst_statuses,
+        update_research_team_status,
+    )
     from tradingagents.graph.trading_graph import TradingAgentsGraph
 
     # First get all user selections
