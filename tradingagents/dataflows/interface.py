@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Optional
 
 # Import from vendor-specific modules
 from .y_finance import (
@@ -23,6 +23,7 @@ from .alpha_vantage import (
     get_global_news as get_alpha_vantage_global_news,
 )
 from .alpha_vantage_common import AlphaVantageRateLimitError
+from .polygon_daily import get_stock as get_polygon_stock
 
 # Configuration and routing logic
 from .config import get_config
@@ -63,6 +64,7 @@ TOOLS_CATEGORIES = {
 VENDOR_LIST = [
     "yfinance",
     "alpha_vantage",
+    "polygon",
 ]
 
 # Mapping of methods to their vendor-specific implementations
@@ -71,6 +73,7 @@ VENDOR_METHODS = {
     "get_stock_data": {
         "alpha_vantage": get_alpha_vantage_stock,
         "yfinance": get_YFin_data_online,
+        "polygon": get_polygon_stock,
     },
     # technical_indicators
     "get_indicators": {
@@ -116,7 +119,7 @@ def get_category_for_method(method: str) -> str:
             return category
     raise ValueError(f"Method '{method}' not found in any category")
 
-def get_vendor(category: str, method: str = None) -> str:
+def get_vendor(category: str, method: Optional[str] = None) -> str:
     """Get the configured vendor for a data category or specific tool method.
     Tool-level configuration takes precedence over category-level.
     """
@@ -135,7 +138,7 @@ def route_to_vendor(method: str, *args, **kwargs):
     """Route method calls to appropriate vendor implementation with fallback support."""
     category = get_category_for_method(method)
     vendor_config = get_vendor(category, method)
-    primary_vendors = [v.strip() for v in vendor_config.split(',')]
+    primary_vendors = [v.strip() for v in vendor_config.split(",") if v.strip()]
 
     if method not in VENDOR_METHODS:
         raise ValueError(f"Method '{method}' not supported")
