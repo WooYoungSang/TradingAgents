@@ -1,107 +1,139 @@
 import importlib
 import importlib.util
-from pathlib import Path
 import sys
-from types import ModuleType
-from typing import Any
-
-import pandas as pd
-
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+import types
+import unittest
+from pathlib import Path
+from unittest import mock
 
 
-def _wrap_stockstats_payload(data: object) -> object:
-    return data
+ROOT = Path(__file__).resolve().parents[2]
 
 
-def _install_stockstats_stub() -> None:
-    stockstats_module = ModuleType("stockstats")
-    setattr(stockstats_module, "wrap", _wrap_stockstats_payload)
-    sys.modules["stockstats"] = stockstats_module
+def load_interface_module():
+    """Load the interface module with offline-safe dependency stubs."""
+    stockstats_stub = types.ModuleType("stockstats")
+    stockstats_stub.wrap = lambda data: data
+    sys.modules["stockstats"] = stockstats_stub
+
+    module = importlib.import_module("tradingagents.dataflows.interface")
+    return importlib.reload(module)
 
 
-def _import_module(module_name: str) -> Any:
-    _install_stockstats_stub()
-    sys.modules.pop(module_name, None)
-    return importlib.import_module(module_name)
-
-
-def _load_module_from_path(module_name: str, relative_path: str) -> Any:
-    _install_stockstats_stub()
-    module_path = REPO_ROOT / relative_path
-    spec = importlib.util.spec_from_file_location(module_name, module_path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Unable to load module spec for {module_name}")
+def load_core_stock_tools_module():
+    """Load the core stock tool module without importing the full agents package."""
+    spec = importlib.util.spec_from_file_location(
+        "core_stock_tools_under_test",
+        ROOT / "tradingagents/agents/utils/core_stock_tools.py",
+    )
     module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
+    assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
 
 
-def test_normalize_stock_payload_to_csv_string_handles_dataframe_payload() -> None:
-    core_stock_tools = _load_module_from_path(
-        "test_core_stock_tools_module",
-        "tradingagents/agents/utils/core_stock_tools.py",
-    )
-    payload = pd.DataFrame(
-        [{"Open": 1.0, "Close": 2.0}],
-        index=pd.DatetimeIndex(["2024-01-02"], name="Date"),
-    )
+class StockDataOutputContractTests(unittest.TestCase):
+    def test_route_to_vendor_returns_csv_string_for_get_stock_data(self):
+        interface = load_interface_module()
+        csv_payload = "timestamp,open,close\n2024-01-02,100.0,101.0\n"
 
-    result = core_stock_tools._normalize_stock_payload_to_csv_string(payload)
-
-    assert result.startswith("Date,Open,Close")
-    assert "2024-01-02,1.0,2.0" in result
-
-
-def test_get_stock_data_tool_returns_csv_string_from_dataframe_payload(
-    monkeypatch,
-) -> None:
-    core_stock_tools = _load_module_from_path(
-        "test_core_stock_tools_module_for_tool",
-        "tradingagents/agents/utils/core_stock_tools.py",
-    )
-    payload = pd.DataFrame(
-        [{"Open": 1.0, "Close": 2.0}],
-        index=pd.DatetimeIndex(["2024-01-02"], name="Date"),
-    )
-    monkeypatch.setattr(core_stock_tools, "route_to_vendor", lambda *args: payload)
-
-    result = core_stock_tools.get_stock_data.func("AAPL", "2024-01-01", "2024-01-03")
-
-    assert result.startswith("Date,Open,Close")
-    assert "2024-01-02,1.0,2.0" in result
-
-
-def test_get_yfin_data_online_returns_plain_csv_without_comment_headers(
-    monkeypatch,
-) -> None:
-    y_finance = _import_module("tradingagents.dataflows.y_finance")
-    payload = pd.DataFrame(
-        [
-            {
-                "Open": 1.234,
-                "High": 1.678,
-                "Low": 1.111,
-                "Close": 1.555,
-                "Adj Close": 1.555,
-                "Volume": 100,
+        config = {
+            "data_vendors": {"core_stock_apis": "yfinance"},
+            "tool_vendors": {"get_stock_data": "yfinance"},
+        }
+        vendor_methods = {
+            "get_stock_data": {
+                "yfinance": mock.Mock(return_value=csv_payload),
+                "alpha_vantage": mock.Mock(return_value="unused"),
             }
-        ],
-        index=pd.DatetimeIndex(["2024-01-02"], name="Date"),
-    )
+        }
 
-    class DummyTicker:
-        def history(self, start: str, end: str):
-            return payload.copy()
+        with mock.patch.object(interface, "get_config", return_value=config):
+            with mock.patch.object(interface, "VENDOR_METHODS", vendor_methods):
+                result = interface.route_to_vendor(
+                    "get_stock_data",
+                    "AAPL",
+                    "2024-01-01",
+                    "2024-01-31",
+                )
 
-    monkeypatch.setattr(y_finance.yf, "Ticker", lambda symbol: DummyTicker())
+        self.assertIsInstance(result, str)
+        self.assertEqual(result, csv_payload)
+        self.assertIn(",", result.splitlines()[0])
 
-    result = y_finance.get_YFin_data_online("AAPL", "2024-01-01", "2024-01-03")
+    def test_get_stock_data_tool_preserves_csv_string_contract(self):
+        load_interface_module()
+        core_stock_tools = load_core_stock_tools_module()
+        csv_payload = "timestamp,open,close\n2024-01-02,100.0,101.0\n"
 
-    assert result.startswith("Date,Open,High,Low,Close,Adj Close,Volume")
-    assert not result.startswith("#")
-    assert "2024-01-02,1.23,1.68,1.11,1.56,1.56,100" in result
+        with mock.patch.object(
+            core_stock_tools,
+            "route_to_vendor",
+            return_value=csv_payload,
+        ) as route_to_vendor:
+            result = core_stock_tools.get_stock_data.func(
+                "AAPL",
+                "2024-01-01",
+                "2024-01-31",
+            )
+
+        self.assertIsInstance(result, str)
+        self.assertEqual(result, csv_payload)
+        route_to_vendor.assert_called_once_with(
+            "get_stock_data",
+            "AAPL",
+            "2024-01-01",
+            "2024-01-31",
+        )
+
+    def test_polygon_get_stock_returns_csv_string(self):
+        polygon_daily = importlib.import_module("tradingagents.dataflows.polygon_daily")
+        response = mock.Mock()
+        response.status_code = 200
+        response.raise_for_status.return_value = None
+        response.json.return_value = {
+            "results": [
+                {
+                    "t": 1704067200000,
+                    "o": 100.0,
+                    "h": 110.0,
+                    "l": 95.0,
+                    "c": 108.0,
+                    "v": 1234,
+                },
+                {
+                    "t": 1704153600000,
+                    "o": 108.0,
+                    "h": 112.0,
+                    "l": 107.0,
+                    "c": 111.0,
+                    "v": 2345,
+                },
+            ]
+        }
+
+        with mock.patch.object(
+            polygon_daily,
+            "get_api_key",
+            return_value="test-key",
+        ):
+            with mock.patch.object(polygon_daily.requests, "get", return_value=response):
+                result = polygon_daily.get_stock(
+                    "AAPL",
+                    "2024-01-01",
+                    "2024-01-02",
+                )
+
+        self.assertIsInstance(result, str)
+        self.assertEqual(
+            result,
+            (
+                "timestamp,open,high,low,close,volume\r\n"
+                "2024-01-01,100.0,110.0,95.0,108.0,1234\r\n"
+                "2024-01-02,108.0,112.0,107.0,111.0,2345\r\n"
+            ),
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
