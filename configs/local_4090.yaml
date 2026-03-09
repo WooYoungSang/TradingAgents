@@ -1,8 +1,11 @@
+# Keep the provider as "openai" for any OpenAI-compatible local server.
 llm_provider: "openai"
 backend_url: "http://127.0.0.1:8000/v1"
 
+# A single local endpoint usually serves one model, so both tiers default to the
+# same identifier unless you expose multiple models behind the same backend_url.
 # Non-China-origin model placeholders for local RTX 4090 usage.
-quick_think_llm: "meta-llama/Llama-3.1-8B-Instruct"
+quick_think_llm: "nvidia/Mistral-NeMo-12B-Instruct"
 deep_think_llm: "nvidia/Mistral-NeMo-12B-Instruct"
 
 # Conservative runtime defaults.
