@@ -1,71 +1,51 @@
 from __future__ import annotations
 
-import csv
 import os
-from datetime import datetime, timezone
-from io import StringIO
+from datetime import datetime
 
+import pandas as pd
 import requests
 
-
-API_BASE_URL = "https://api.polygon.io/v2/aggs/ticker/{symbol}/range/1/day/{start_date}/{end_date}"
+POLYGON_BASE_URL = "https://api.polygon.io/v2/aggs/ticker/{ticker}/range/1/day/{start}/{end}"
 
 
 class PolygonRateLimitError(Exception):
-    """Raised when Polygon returns a retryable rate-limit response."""
+    """Exception raised when Polygon API rate limit is exceeded."""
 
 
 def get_api_key() -> str:
-    """Retrieve the Polygon API key from the environment."""
+    """Retrieve the API key for Polygon from environment variables."""
     api_key = os.getenv("POLYGON_API_KEY")
     if not api_key:
         raise ValueError("POLYGON_API_KEY environment variable is not set.")
     return api_key
 
 
-def _validate_date(date_input: str) -> str:
-    """Validate and normalize a date input to YYYY-MM-DD."""
-    return datetime.strptime(date_input, "%Y-%m-%d").strftime("%Y-%m-%d")
+def _is_rate_limit_response(status_code: int, payload: dict) -> bool:
+    """Return True when the response clearly indicates a retryable rate limit."""
+    if status_code == 429:
+        return True
 
-
-def _format_csv(results: list[dict]) -> str:
-    """Convert Polygon aggregate rows to a CSV-compatible string."""
-    output = StringIO()
-    fieldnames = ["timestamp", "open", "high", "low", "close", "volume"]
-    writer = csv.DictWriter(output, fieldnames=fieldnames)
-    writer.writeheader()
-
-    for row in results:
-        timestamp_ms = row.get("t")
-        if timestamp_ms is None:
-            continue
-
-        trading_day = datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
-        writer.writerow(
-            {
-                "timestamp": trading_day,
-                "open": row.get("o"),
-                "high": row.get("h"),
-                "low": row.get("l"),
-                "close": row.get("c"),
-                "volume": row.get("v"),
-            }
-        )
-
-    return output.getvalue()
+    message_parts = [
+        str(payload.get("error", "")),
+        str(payload.get("message", "")),
+        str(payload.get("status", "")),
+    ]
+    normalized = " ".join(message_parts).lower()
+    return "rate limit" in normalized or "too many requests" in normalized
 
 
 def get_stock(symbol: str, start_date: str, end_date: str) -> str:
-    """Fetch daily OHLCV data from Polygon and return it as a CSV-compatible string."""
-    normalized_start = _validate_date(start_date)
-    normalized_end = _validate_date(end_date)
-    url = API_BASE_URL.format(
-        symbol=symbol.upper(),
-        start_date=normalized_start,
-        end_date=normalized_end,
-    )
+    """Return Polygon daily OHLCV data as a CSV-compatible string."""
+    datetime.strptime(start_date, "%Y-%m-%d")
+    datetime.strptime(end_date, "%Y-%m-%d")
+
     response = requests.get(
-        url,
+        POLYGON_BASE_URL.format(
+            ticker=symbol.upper(),
+            start=start_date,
+            end=end_date,
+        ),
         params={
             "adjusted": "true",
             "sort": "asc",
@@ -75,9 +55,40 @@ def get_stock(symbol: str, start_date: str, end_date: str) -> str:
         timeout=30,
     )
 
-    if response.status_code == 429:
-        raise PolygonRateLimitError("Polygon API rate limit exceeded.")
+    payload = response.json()
+
+    if _is_rate_limit_response(response.status_code, payload):
+        raise PolygonRateLimitError(f"Polygon rate limit exceeded: {payload}")
 
     response.raise_for_status()
-    payload = response.json()
-    return _format_csv(payload.get("results", []))
+
+    results = payload.get("results", [])
+    if not results:
+        return (
+            f"No data found for symbol '{symbol}' between {start_date} and {end_date}"
+        )
+
+    data = pd.DataFrame(results).rename(
+        columns={
+            "t": "Date",
+            "o": "Open",
+            "h": "High",
+            "l": "Low",
+            "c": "Close",
+            "v": "Volume",
+            "vw": "VWAP",
+            "n": "Transactions",
+        }
+    )
+    data["Date"] = pd.to_datetime(data["Date"], unit="ms").dt.strftime("%Y-%m-%d")
+
+    for column in ("Open", "High", "Low", "Close", "VWAP"):
+        if column in data.columns:
+            data[column] = data[column].round(2)
+
+    ordered_columns = [
+        column
+        for column in ["Date", "Open", "High", "Low", "Close", "Volume", "VWAP", "Transactions"]
+        if column in data.columns
+    ]
+    return data.loc[:, ordered_columns].to_csv(index=False)

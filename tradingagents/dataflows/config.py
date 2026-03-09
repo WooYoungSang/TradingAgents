@@ -24,6 +24,8 @@ def get_config() -> Dict:
     """Get the current configuration."""
     if _config is None:
         initialize_config()
+    if _config is None:
+        raise RuntimeError("Configuration initialization failed.")
     return _config.copy()
 
 
